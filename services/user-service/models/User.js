@@ -6,6 +6,8 @@ const User = sequelize.define("User", {
   email: { type: DataTypes.STRING, unique: true, allowNull: false },
   password: { type: DataTypes.STRING, allowNull: false },
   isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
+  refreshToken: { type: DataTypes.TEXT, allowNull: true }, // NEW FIELD
+
 
   // Optional profile fields
   firstName: { type: DataTypes.STRING, allowNull: true },
