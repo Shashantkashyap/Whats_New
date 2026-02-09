@@ -80,6 +80,11 @@ const newsSchema = new mongoose.Schema(
       hints: [{ type: String, trim: true }],
     },
 
+    imageUrl: {
+      type: String,
+      trim: true,
+    },
+
     // Generic fields
     tags: [
       {

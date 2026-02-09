@@ -1,21 +1,17 @@
 /**
- * contentPipeline.js - COMPLETE OPTIMIZED VERSION
+ * contentPipeline.js - COMPLETE OPTIMIZED VERSION WITH IMAGE INTEGRATION
  *
- * Full, detailed, production-ready UPSC content pipeline integrated with Gemini.
- * SCHEMA OPTIMIZED FIXES:
- * - Summary expanded to 8-10 points (200 words) 
- * - Direct bullet points without "Bullet 1:" prefix
- * - Better "why" context with real scenarios
- * - Fixed flowchart nodes structure matching schema exactly
- * - All fields properly mapped to News schema
+ * Full, detailed, production-ready UPSC content pipeline integrated with Gemini and Unsplash.
  *
- * Usage:
+ * USAGE:
  *  const { runContentPipeline, testGeminiConnection } = require("./pipeline/contentPipeline");
  *  runContentPipeline("dev"); // or "prod"
  */
 
-const geminiModel = require("../config/gemni"); // make sure this file exports the generative model
-const News = require("../models/News"); // your mongoose model (ensure schema matches fields below)
+require("dotenv").config();
+const geminiModel = require("../config/gemni"); // your gemini model wrapper (ensure generateContent exists)
+const News = require("../models/News"); // your mongoose model
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
@@ -60,106 +56,214 @@ const tagsConfig = {
 const allTags = [...tagsConfig.high, ...tagsConfig.medium, ...tagsConfig.low];
 
 // -------------------------
-// 🔧 SCHEMA-OPTIMIZED Data Normalizer
+// 🔧 Unsplash helper (inline) - uses only ACCESS KEY
 // -------------------------
-function normalizeGeminiOutput(data) {
-  console.log("🔹 Normalizing Gemini output:", data);
-  
-  return {
-    ...data,
-    
-    // Generate flowchart string from nodes if not present
-    flowchart: data.flowchart || (Array.isArray(data.flowchartNodes) 
-      ? data.flowchartNodes.map(node => node.label).join(" → ") 
-      : "Background → Current Issue → Government Response → Impact → Future"),
-    
-    // FIXED: Proper flowchart nodes structure matching schema exactly
-    flowchartNodes: Array.isArray(data.flowchartNodes) 
-      ? data.flowchartNodes.map((node, index) => ({
-          id: node.id || `step${index + 1}`,
-          label: node.label || `Step ${index + 1}`,
-          // CRITICAL FIX: Ensure content field is always present
-          content: node.content || `Content for ${node.label || `Step ${index + 1}`}`,
-          connections: Array.isArray(node.connections) ? node.connections : []
-        })) 
-      : [
-          { 
-            id: "step1", 
-            label: "Background/Context", 
-            content: "Historical context and background information leading to current developments",
-            connections: ["step2"] 
-          },
-          { 
-            id: "step2", 
-            label: "Current Development", 
-            content: "Recent events and developments that have brought this issue to prominence",
-            connections: ["step3"] 
-          },
-          { 
-            id: "step3", 
-            label: "Government Response", 
-            content: "Official government actions, policies, and statements addressing the issue",
-            connections: ["step4"] 
-          },
-          { 
-            id: "step4", 
-            label: "Stakeholders Impact", 
-            content: "Analysis of how different stakeholders are affected by these developments",
-            connections: ["step5"] 
-          },
-          { 
-            id: "step5", 
-            label: "Future Implications", 
-            content: "Long-term consequences and future outlook for this issue",
-            connections: [] 
-          }
-        ],
-    
-    // FIXED: examRelevance as array of strings (matching schema)
-    examRelevance: Array.isArray(data.examRelevance) 
-      ? data.examRelevance 
-      : typeof data.examRelevance === 'object' && data.examRelevance 
-        ? [`Prelims: ${data.examRelevance.prelims || 'Current Affairs'}`, `Mains: ${data.examRelevance.mains || 'GS Paper'}`] 
-        : ["GS-II: Current Affairs", "Prelims: General Studies"],
-    
-    // FIXED: MCQs structure matching schema exactly  
-    mcqs: (data.mcqs || []).map(mcq => ({
-      question: mcq.question || "",
-      options: Array.isArray(mcq.options) 
-        ? mcq.options 
-        : (mcq.options && typeof mcq.options === 'object') 
-          ? Object.values(mcq.options) 
-          : [],
-      answer: mcq.answer || ""
-    })),
-    
-    // FIXED: Clean summary points without prefixes (8-10 points)
-    summary: Array.isArray(data.summary) 
-      ? data.summary.map(point => {
-          // Remove "Bullet 1:", "Point 1:", etc. prefixes
-          return point.replace(/^(Bullet|Point)\s*\d+:\s*/i, '').trim();
-        }) 
-      : [],
-    
-    // FIXED: mainsQuestion structure matching schema
-    mainsQuestion: {
-      question: data.mainsQuestion?.question || "",
-      hints: Array.isArray(data.mainsQuestion?.hints) ? data.mainsQuestion.hints : []
-    },
-    
-    // Ensure why field is present
-    why: data.why || "Context and significance of this development for UPSC preparation"
-  };
+// .env must have: UNSPLASH_ACCESS_KEY=your_key
+async function getUnsplashImageUrl(query) {
+  const fallback = "https://placehold.co/800x400?text=No+Image";
+  try {
+    if (!process.env.UNSPLASH_ACCESS_KEY) {
+      console.warn("Unsplash access key not set; returning placeholder.");
+      return fallback;
+    }
+
+    const url = "https://api.unsplash.com/search/photos";
+    const resp = await axios.get(url, {
+      params: { query, per_page: 1, orientation: "landscape" },
+      headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` },
+      timeout: 8000,
+    });
+
+    const result = resp.data && resp.data.results && resp.data.results[0];
+    if (!result) return fallback;
+
+    // choose appropriate size (regular is good for web)
+    return result.urls?.regular || result.urls?.small || result.urls?.full || fallback;
+  } catch (err) {
+    console.warn("getUnsplashImageUrl error:", err?.message || err);
+    return fallback;
+  }
 }
 
 // -------------------------
-// 🔥 Smart Relevance Calculator
+// 🎨 NEW: Image Search Term Generator
 // -------------------------
-// Returns integer 0..10
+function generateImageSearchTerm(newsItem, generatedContent) {
+  const title = newsItem.title || "";
+  const tags = newsItem.tags || [];
+  const why = generatedContent.why || "";
+
+  const searchTerms = [];
+
+  // 1. Extract key meaningful title words
+  const titleWords = title
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3)
+    .filter((w) => !["news", "india", "government", "announces", "says", "minister"].includes(w));
+
+  // 2. Map tags to visual concepts
+  const tagToVisualMap = {
+    Polity: "indian parliament government building",
+    Economy: "india economic growth business charts",
+    IR: "international diplomacy flags handshake",
+    Environment: "nature environment green india",
+    "Science & Tech": "technology innovation laboratory",
+    "Internal Security": "security forces indian army",
+    Governance: "government building administration",
+    Ethics: "scales justice ethics moral",
+    Education: "students education classroom india",
+    Health: "medical healthcare hospital india",
+    Agriculture: "indian farmers agriculture crops",
+    Infrastructure: "construction development infrastructure",
+    Energy: "solar panels renewable energy india",
+    "Climate Change": "climate change environment earth",
+    Transport: "transportation railways roads india",
+    Cybersecurity: "cybersecurity technology digital",
+    Culture: "indian culture tradition heritage",
+    Finance: "finance banking money rupees",
+    Trade: "trade commerce business india",
+    Judiciary: "court justice legal system india",
+  };
+
+  if (tags.length > 0) {
+    const primaryTag = tags[0];
+    const visualConcept = tagToVisualMap[primaryTag];
+    if (visualConcept) searchTerms.push(visualConcept);
+  }
+
+  if (titleWords.length > 0) {
+    const relevantWords = titleWords.slice(0, 3).join(" ");
+    if (relevantWords) searchTerms.push(`${relevantWords} india`);
+  }
+
+  const fallbackTerms = {
+    policy: "indian government policy meeting",
+    law: "legal document justice india",
+    economic: "india economy business growth",
+    social: "indian society people community",
+    international: "international cooperation flags",
+    technology: "technology innovation digital india",
+    environment: "india environment nature green",
+    education: "education students learning india",
+    health: "healthcare medical india hospital",
+    security: "security safety protection india",
+  };
+
+  const titleLower = title.toLowerCase();
+  for (const [keyword, term] of Object.entries(fallbackTerms)) {
+    if (titleLower.includes(keyword)) {
+      searchTerms.push(term);
+      break;
+    }
+  }
+
+  if (searchTerms.length > 0) return searchTerms[0];
+  if (why && why.length > 20) {
+    // use some words from why if title is poor
+    const words = why
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 4)
+      .slice(0, 3)
+      .join(" ");
+    if (words) return `${words} india`;
+  }
+
+  return "india government news current affairs";
+}
+
+// -------------------------
+// 🔧 SCHEMA-OPTIMIZED Data Normalizer
+// -------------------------
+function normalizeGeminiOutput(data) {
+  // ensure we always return an object with expected keys
+  const safe = { ...(data || {}) };
+
+  // flowchart
+  safe.flowchart =
+    safe.flowchart ||
+    (Array.isArray(safe.flowchartNodes)
+      ? safe.flowchartNodes.map((n) => n.label).join(" → ")
+      : "Background → Current Issue → Government Response → Impact → Future");
+
+  // flowchartNodes
+  safe.flowchartNodes = Array.isArray(safe.flowchartNodes)
+    ? safe.flowchartNodes.map((node, idx) => ({
+        id: node.id || `step${idx + 1}`,
+        label: node.label || `Step ${idx + 1}`,
+        content: node.content || `Content for ${node.label || `Step ${idx + 1}`}`,
+        connections: Array.isArray(node.connections) ? node.connections : [],
+      }))
+    : [
+        {
+          id: "step1",
+          label: "Background/Context",
+          content: "Historical context and background information leading to current developments",
+          connections: ["step2"],
+        },
+        {
+          id: "step2",
+          label: "Current Development",
+          content: "Recent events and developments that have brought this issue to prominence",
+          connections: ["step3"],
+        },
+        {
+          id: "step3",
+          label: "Government Response",
+          content: "Official government actions, policies, and statements addressing the issue",
+          connections: ["step4"],
+        },
+        {
+          id: "step4",
+          label: "Stakeholders Impact",
+          content: "Analysis of how different stakeholders are affected by these developments",
+          connections: ["step5"],
+        },
+        {
+          id: "step5",
+          label: "Future Implications",
+          content: "Long-term consequences and future outlook for this issue",
+          connections: [],
+        },
+      ];
+
+  // examRelevance
+  safe.examRelevance = Array.isArray(safe.examRelevance)
+    ? safe.examRelevance
+    : typeof safe.examRelevance === "object" && safe.examRelevance
+    ? [`Prelims: ${safe.examRelevance.prelims || "Current Affairs"}`, `Mains: ${safe.examRelevance.mains || "GS Paper"}`]
+    : ["GS-II: Current Affairs", "Prelims: General Studies"];
+
+  // mcqs
+  safe.mcqs = (safe.mcqs || []).map((mcq) => ({
+    question: mcq.question || "",
+    options: Array.isArray(mcq.options) ? mcq.options : mcq.options && typeof mcq.options === "object" ? Object.values(mcq.options) : [],
+    answer: mcq.answer || "",
+  }));
+
+  // summary - remove Bullet/Point prefixes
+  safe.summary = Array.isArray(safe.summary) ? safe.summary.map((pt) => String(pt).replace(/^(Bullet|Point)\s*\d+:\s*/i, "").trim()) : [];
+
+  // mainsQuestion
+  safe.mainsQuestion = {
+    question: safe.mainsQuestion?.question || "",
+    hints: Array.isArray(safe.mainsQuestion?.hints) ? safe.mainsQuestion.hints : [],
+  };
+
+  safe.why = safe.why || "Context and significance of this development for UPSC preparation";
+
+  return safe;
+}
+
+// -------------------------
+// 🔥 Smart Relevance Calculator (0-10)
+// -------------------------
 function calculateRelevanceScore(newsItem) {
   let score = 0;
 
-  // Tag-based weight
   if (Array.isArray(newsItem.tags)) {
     newsItem.tags.forEach((tag) => {
       if (tagsConfig.high.includes(tag)) score += 3;
@@ -168,13 +272,10 @@ function calculateRelevanceScore(newsItem) {
     });
   }
 
-  // Recency
   try {
     const published = new Date(newsItem.publishedAt).getTime();
     if (!isNaN(published)) {
-      const daysSincePublish = Math.floor(
-        (Date.now() - published) / (1000 * 60 * 60 * 24)
-      );
+      const daysSincePublish = Math.floor((Date.now() - published) / (1000 * 60 * 60 * 24));
       if (daysSincePublish <= 1) score += 3;
       else if (daysSincePublish <= 3) score += 2;
       else if (daysSincePublish <= 7) score += 1;
@@ -183,15 +284,7 @@ function calculateRelevanceScore(newsItem) {
     // ignore
   }
 
-  // Source credibility
-  const premiumSources = [
-    "The Hindu",
-    "Indian Express",
-    "PIB",
-    "Economic Times",
-    "Livemint",
-    "Business Standard",
-  ];
+  const premiumSources = ["The Hindu", "Indian Express", "PIB", "Economic Times", "Livemint", "Business Standard"];
   if (premiumSources.includes(newsItem.source)) score += 2;
 
   return Math.min(Math.max(Math.round(score), 0), 10);
@@ -200,20 +293,15 @@ function calculateRelevanceScore(newsItem) {
 // -------------------------
 // 🧹 JSON Sanitizer helpers
 // -------------------------
-// These functions aim to extract and clean JSON returned by Gemini which may be wrapped
-// in markdown fences or contain trailing commas, commentary lines, or extra text.
 function removeCodeFences(text) {
-  // remove ```json ... ``` or ``` ... ```
   return text.replace(/```json\n?/gi, "").replace(/```/g, "").trim();
 }
 
 function removeTrailingCommas(text) {
-  // remove trailing commas before ] or }
   return text.replace(/,\s*(\]|\})/g, "$1");
 }
 
 function extractJsonLike(text) {
-  // find the first {...} or [...]
   const match = text.match(/(\{[\s\S]*\})|(\[[\s\S]*\])/);
   if (match) return match[0];
   return text;
@@ -234,30 +322,21 @@ function safeJsonParse(text) {
     const cleaned = sanitizeJSON(text);
     return JSON.parse(cleaned);
   } catch (err) {
-    // Throw with original + cleaned text to help debugging upstream
-    const e = new Error(
-      `JSON parse failed: ${err.message}`
-    );
+    const e = new Error(`JSON parse failed: ${err.message}`);
     e.raw = text;
     e.cleaned = sanitizeJSON(text);
     throw e;
   }
 }
 
-// Persist raw responses for debugging (optional)
-// Writes to ./logs/gemini-raw-<timestamp>.txt
 function dumpRawResponse(tag, text) {
   try {
     const logsDir = path.join(process.cwd(), "logs");
     if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
-    const filename = path.join(
-      logsDir,
-      `gemini-${tag}-${Date.now()}.txt`
-    );
+    const filename = path.join(logsDir, `gemini-${tag}-${Date.now()}.txt`);
     fs.writeFileSync(filename, text, "utf8");
     return filename;
   } catch (e) {
-    // ignore logging errors
     return null;
   }
 }
@@ -266,9 +345,7 @@ function dumpRawResponse(tag, text) {
 // 🧠 SCHEMA-OPTIMIZED Gemini prompt builder
 // -------------------------
 function buildGeminiContentPrompt(newsItem) {
-  // Escape quotes in title
   const safeTitle = String(newsItem.title || "").replace(/"/g, '\\"');
-
   return `
 You are an expert UPSC content curator for Indian Civil Services aspirants. Produce a single, valid JSON object (no extra text, no markdown fences) in exact structure described below. Do NOT include commentary or anything outside JSON.
 
@@ -281,7 +358,7 @@ INPUT:
 OUTPUT (exact JSON schema):
 {
   "headline": "A concise, exam-focused headline (max 80 chars)",
-  "why": "Explain the current controversy, issue, or significance with real context and scenarios. Example: 'Recent controversial statements by public figures have raised questions about the balance between free speech and responsible discourse, highlighting the ongoing debate around Article 19(1)(a) limitations.' Be specific about the actual scenario, controversy, or underlying issue that makes this news significant.",
+  "why": "Explain the current controversy, issue, or significance with real context and scenarios. Be specific about the actual scenario, controversy, or underlying issue that makes this news significant.",
   "summary": [
     "Key factual point about the main development with specific details and numbers",
     "Government or institutional response and official statements issued",
@@ -336,11 +413,6 @@ OUTPUT (exact JSON schema):
       "question": "MCQ question text related to the news with factual focus",
       "options": ["Option A with specific detail", "Option B with specific detail", "Option C with specific detail", "Option D with specific detail"],
       "answer": "Option A with specific detail"
-    },
-    {
-      "question": "Second MCQ focusing on different aspect of the news", 
-      "options": ["Choice A", "Choice B", "Choice C", "Choice D"],
-      "answer": "Choice B"
     }
   ],
   "mainsQuestion": {
@@ -374,7 +446,10 @@ GUIDELINES:
 async function generateWithGemini(prompt, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      // Call Gemini generative model (gemni configured model instance)
+      if (!geminiModel || typeof geminiModel.generateContent !== "function") {
+        throw new Error("geminiModel.generateContent not available - check ../config/gemni");
+      }
+
       const result = await geminiModel.generateContent({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -385,35 +460,26 @@ async function generateWithGemini(prompt, retries = 3) {
         },
       });
 
-      // result.response.text() returns the text body
-      const raw = result.response.text();
-
-      // quick sanity: if empty, throw
-      if (!raw || raw.trim().length === 0) {
+      // result.response.text() expected
+      const raw = typeof result.response?.text === "function" ? result.response.text() : result?.response || result;
+      if (!raw || (typeof raw === "string" && raw.trim().length === 0)) {
         throw new Error("Empty response from Gemini");
       }
 
-      // Sanitize and parse safely
+      // sanitize & parse
       try {
-        const parsed = safeJsonParse(raw);
+        const parsed = safeJsonParse(typeof raw === "string" ? raw : JSON.stringify(raw));
         return parsed;
       } catch (parseErr) {
-        // Dump raw for debugging
-        const dumpPath = dumpRawResponse("parse-fail", raw);
-        // Augment error message to include dump path if available
+        const dumpPath = dumpRawResponse("parse-fail", typeof raw === "string" ? raw : JSON.stringify(raw));
         const enrichedMsg = `${parseErr.message}${dumpPath ? ` (raw dumped: ${dumpPath})` : ""}`;
         throw new Error(enrichedMsg);
       }
-
     } catch (err) {
       console.log(`⚠️ Attempt ${attempt} failed: ${err.message}`);
-
-      // If last attempt, bubble up
       if (attempt === retries) {
         throw new Error(`Gemini generation failed after ${retries} attempts: ${err.message}`);
       }
-
-      // Exponential backoff before retry
       const delayMs = Math.pow(2, attempt) * 1000;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
@@ -421,10 +487,9 @@ async function generateWithGemini(prompt, retries = 3) {
 }
 
 // -------------------------
-// 🔄 SCHEMA-OPTIMIZED Batch Content Processing
+// 🔄 SCHEMA-OPTIMIZED Batch Content Processing with Image Integration
 // -------------------------
 async function generateAndStoreContent(filteredNews, options = {}) {
-  // options: { rateLimitMs }
   const rateLimitMs = options.rateLimitMs || 1500;
 
   const results = {
@@ -433,21 +498,18 @@ async function generateAndStoreContent(filteredNews, options = {}) {
     updated: 0,
     failed: 0,
     errors: [],
+    imagesGenerated: 0,
+    imagesFailed: 0,
   };
 
   for (const [index, newsItem] of filteredNews.entries()) {
     console.log(`\n📝 Processing ${index + 1}/${filteredNews.length}: ${newsItem.title}`);
 
     try {
-      // Check if exists by title or url
-      const existing = await News.findOne({
-        $or: [{ title: newsItem.title }, { url: newsItem.url }],
-      });
-
+      const existing = await News.findOne({ $or: [{ title: newsItem.title }, { url: newsItem.url }] });
       const relevance = calculateRelevanceScore(newsItem);
 
       if (existing) {
-        // Update only metadata & relevance
         existing.relevanceScore = Math.max(existing.relevanceScore || 0, relevance);
         existing.updatedAt = new Date();
         await existing.save();
@@ -455,42 +517,44 @@ async function generateAndStoreContent(filteredNews, options = {}) {
         results.updated++;
         results.processed++;
         console.log(`🔄 Updated existing: ${existing.title}`);
-        // continue to next
         await new Promise((r) => setTimeout(r, rateLimitMs));
         continue;
       }
 
-      // Generate content with Gemini
+      // Gemini content
       console.log(`🧠 Generating content with Gemini...`);
       const prompt = buildGeminiContentPrompt(newsItem);
       let rawContent = await generateWithGemini(prompt, 3);
-      
-      // Debug log
-      console.log(`📄 Raw Gemini response sample:`, JSON.stringify(rawContent).substring(0, 200) + '...');
-      
-      let content = normalizeGeminiOutput(rawContent);
-      
-      // Debug flowchart nodes
-      console.log(`🔗 FlowchartNodes count: ${content.flowchartNodes?.length || 0}`);
-      if (content.flowchartNodes && content.flowchartNodes.length > 0) {
-        console.log(`🔗 First node:`, JSON.stringify(content.flowchartNodes[0]));
-      }
 
-      // Validate required fields according to schema
+      console.log(`📄 Raw Gemini response sample:`, JSON.stringify(rawContent).substring(0, 300) + "...");
+      let content = normalizeGeminiOutput(rawContent);
+
+      // Validate
       if (!content.headline || !Array.isArray(content.summary) || content.summary.length < 8) {
-        // dump raw for debugging
         results.failed++;
         const msg = `Generated content missing required fields or insufficient summary points (need 8-10, got ${content.summary?.length || 0})`;
         results.errors.push({ title: newsItem.title, error: msg });
         console.error(`❌ ${msg} for: ${newsItem.title}`);
-        // still wait
         await new Promise((r) => setTimeout(r, rateLimitMs));
         continue;
       }
 
-      // Build news doc - SCHEMA PERFECTLY MATCHED
+      // Image generation
+      let imageUrl = "https://placehold.co/800x400?text=No+Image";
+      try {
+        console.log(`🎨 Generating image search term...`);
+        const searchTerm = generateImageSearchTerm(newsItem, content);
+        console.log(`🔍 Image search term: "${searchTerm}"`);
+        imageUrl = await getUnsplashImageUrl(searchTerm);
+        console.log(`📸 Image URL generated: ${imageUrl}`);
+        results.imagesGenerated++;
+      } catch (imageError) {
+        console.warn(`⚠️ Image generation failed: ${imageError.message}`);
+        results.imagesFailed++;
+      }
+
+      // Build news doc
       const newsDoc = new News({
-        // Basic required fields
         title: content.headline || newsItem.title,
         description: content.why || content.headline || newsItem.title,
         content: Array.isArray(content.summary) ? content.summary.join("\n") : content.summary || newsItem.content || "",
@@ -498,31 +562,24 @@ async function generateAndStoreContent(filteredNews, options = {}) {
         source: newsItem.source || "Unknown",
         author: newsItem.author || "News Desk",
         publishedAt: newsItem.publishedAt ? new Date(newsItem.publishedAt) : new Date(),
-        
-        // UPSC-specific fields matching exact schema structure
         why: content.why || "",
-        summary: content.summary || [], // Array of strings (8-10 points)
-        flowchart: content.flowchart || "", // String
-        flowchartNodes: content.flowchartNodes || [], // Array with id, label, connections
-        examRelevance: content.examRelevance || [], // Array of strings
-        mcqs: content.mcqs || [], // Array with question, options[], answer
+        summary: content.summary || [],
+        flowchart: content.flowchart || "",
+        flowchartNodes: content.flowchartNodes || [],
+        examRelevance: content.examRelevance || [],
+        mcqs: content.mcqs || [],
         mainsQuestion: content.mainsQuestion || { question: "", hints: [] },
-        
-        // Generic fields
+        imageUrl: imageUrl,
         tags: newsItem.tags || [],
         categories: newsItem.categories || ["UPSC", "Current Affairs"],
         relevanceScore: relevance,
-        
-        // Timestamps handled by schema automatically via timestamps: true
       });
 
       await newsDoc.save();
 
       results.created++;
       results.processed++;
-      console.log(`✅ Created: ${newsDoc.title} (${newsDoc.summary.length} points)`);
-
-      // rate limit sleep
+      console.log(`✅ Created: ${newsDoc.title} (${newsDoc.summary.length} points) [Image: ${imageUrl ? "Generated" : "Placeholder"}]`);
       await new Promise((r) => setTimeout(r, rateLimitMs));
     } catch (err) {
       results.failed++;
@@ -530,7 +587,6 @@ async function generateAndStoreContent(filteredNews, options = {}) {
       const errMsg = err?.message || String(err);
       results.errors.push({ title: newsItem.title || "unknown", error: errMsg });
       console.error(`❌ Failed processing: ${newsItem.title} -> ${errMsg}`);
-      // ensure small delay before continuing
       await new Promise((r) => setTimeout(r, 1200));
     }
   }
@@ -541,7 +597,6 @@ async function generateAndStoreContent(filteredNews, options = {}) {
 // -------------------------
 // 📡 Direct Top 5 News Fetcher (Prod)
 // -------------------------
-// Note: we restrict to 5 items as requested to simplify parsing & reduce quota usage.
 async function fetchTop5News_Prod() {
   const today = new Date().toISOString().split("T")[0];
 
@@ -557,18 +612,6 @@ Each item must include:
 - tags (array of strings)
 - content (2-3 sentence factual summary)
 
-Output format EXAMPLE:
-[
-  {
-    "title": "Precise headline",
-    "url": "https://source-link",
-    "source": "Reliable Source",
-    "publishedAt": "2025-09-13T08:30:00Z",
-    "tags": ["Polity", "Economy"],
-    "content": "Short factual summary"
-  }
-]
-
 Constraints:
 - Use only reliable sources (PIB, The Hindu, Indian Express, ET, Livemint).
 - Avoid opinion pieces, entertainment, sports.
@@ -577,17 +620,12 @@ Constraints:
 
   try {
     const parsed = await generateWithGemini(prompt, 3);
-    // generateWithGemini returns a JSON value - ensure it's an array
     if (Array.isArray(parsed)) return parsed.slice(0, 5);
-    // Sometimes model wraps under a key like { news: [...] }
     if (parsed && Array.isArray(parsed.news)) return parsed.news.slice(0, 5);
-    // If parsed is object with numeric keys, try to coerce
     if (parsed && typeof parsed === "object") {
-      // try to find first array value
       const arr = Object.values(parsed).find((v) => Array.isArray(v));
       if (arr) return arr.slice(0, 5);
     }
-    // If nothing, return empty
     console.warn("⚠️ fetchTop5News_Prod: unexpected response shape, returning empty.");
     return [];
   } catch (err) {
@@ -643,20 +681,19 @@ async function fetchTop5News_Dev() {
       source: "The Hindu",
       publishedAt: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
       tags: ["Environment", "Economy", "Governance"],
-      content: "Policy updates aim to balance coastal development and marine ecology protection with enhanced stakeholder consultation mechanisms.",
+      content:
+        "Policy updates aim to balance coastal development and marine ecology protection with enhanced stakeholder consultation mechanisms.",
     },
   ];
 }
 
 // -------------------------
-// 🚀 Main Pipeline Runner - COMPLETE
+// 🚀 Main Orchestrator
 // -------------------------
 async function runContentPipeline(mode = "dev") {
   console.log(`\n🚀 Starting UPSC Content Pipeline [mode=${mode}] at ${new Date().toLocaleString()}`);
 
   try {
-    // Step 1: Fetch news
-    console.log("\n🔍 STEP 1: Fetching news items...");
     const fetched = mode === "prod" ? await fetchTop5News_Prod() : await fetchTop5News_Dev();
 
     if (!Array.isArray(fetched) || fetched.length === 0) {
@@ -665,8 +702,6 @@ async function runContentPipeline(mode = "dev") {
 
     console.log(`✅ Fetched ${fetched.length} news items.`);
 
-    // Step 2: Generate & store content
-    console.log("\n🎯 STEP 2: Generating & storing content with Gemini...");
     const results = await generateAndStoreContent(fetched, { rateLimitMs: 1500 });
 
     console.log("\n📊 PIPELINE SUMMARY:");
@@ -674,7 +709,6 @@ async function runContentPipeline(mode = "dev") {
     console.log(`   Created:   ${results.created}`);
     console.log(`   Updated:   ${results.updated}`);
     console.log(`   Failed:    ${results.failed}`);
-
     if (results.errors && results.errors.length) {
       console.log("\n⚠️ Errors:");
       results.errors.forEach((e, i) => {
@@ -690,68 +724,22 @@ async function runContentPipeline(mode = "dev") {
 }
 
 // -------------------------
-// 📊 Analytics & Utilities
-// -------------------------
-async function getContentAnalytics() {
-  try {
-    const total = await News.countDocuments();
-    const last24 = await News.countDocuments({
-      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-    });
-
-    const tagDistribution = await News.aggregate([
-      { $unwind: "$tags" },
-      { $group: { _id: "$tags", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
-    ]);
-
-    const avgScoreRes = await News.aggregate([{ $group: { _id: null, avgScore: { $avg: "$relevanceScore" } } }]);
-
-    const summaryStats = await News.aggregate([
-      { $project: { summaryLength: { $size: { $ifNull: ["$summary", []] } } } },
-      { $group: { _id: null, avgSummaryLength: { $avg: "$summaryLength" }, minLength: { $min: "$summaryLength" }, maxLength: { $max: "$summaryLength" } } }
-    ]);
-
-    return {
-      totalContent: total,
-      todayContent: last24,
-      topTags: tagDistribution,
-      avgRelevanceScore: avgScoreRes[0]?.avgScore || 0,
-      summaryStats: summaryStats[0] || { avgSummaryLength: 0, minLength: 0, maxLength: 0 }
-    };
-  } catch (err) {
-    console.error("Analytics failed:", err.message);
-    return { totalContent: 0, todayContent: 0, topTags: [], avgRelevanceScore: 0, summaryStats: { avgSummaryLength: 0, minLength: 0, maxLength: 0 } };
-  }
-}
-
-// -------------------------
-// 🔄 Gemini Connection Test
+// 📡 Gemini Connection Test
 // -------------------------
 async function testGeminiConnection() {
   console.log("🔄 Testing Gemini API connection...");
-
   const testPrompt = `
-You are testing the Gemini API. Return strictly this JSON (no extra text/markdown):
-
-{
-  "status": "success",
-  "message": "Gemini API connection successful",
-  "timestamp": "${new Date().toISOString()}",
-  "model": "${geminiModel?.model || "unknown-model"}"
-}
-`;
-
+Return strictly this JSON object (no extra text):
+{"status":"success","message":"Gemini test ok","timestamp":"${new Date().toISOString()}"}
+  `;
   try {
     const raw = await generateWithGemini(testPrompt, 2);
-    // raw should already be parsed JSON by generateWithGemini
     if (raw && raw.status === "success") {
-      console.log("✅ Gemini connection OK:", raw.message, raw.model);
+      console.log("✅ Gemini connection OK:", raw.message);
       return true;
     } else {
       console.warn("⚠️ Gemini returned unexpected shape:", raw);
-      return true; // API reachable, but content unexpected
+      return !!raw;
     }
   } catch (err) {
     console.error("❌ Gemini connection failed:", err.message);
@@ -764,32 +752,28 @@ You are testing the Gemini API. Return strictly this JSON (no extra text/markdow
 // -------------------------
 function validateNewsSchema(newsData) {
   const errors = [];
-  
-  // Check required fields
   if (!newsData.title?.trim()) errors.push("Title is required");
   if (!newsData.description?.trim()) errors.push("Description is required");
   if (!newsData.content?.trim()) errors.push("Content is required");
-  
-  // Check UPSC-specific fields
+
   if (!Array.isArray(newsData.summary) || newsData.summary.length < 8) {
     errors.push(`Summary must have 8-10 points, got ${newsData.summary?.length || 0}`);
   }
-  
+
   if (!Array.isArray(newsData.flowchartNodes) || newsData.flowchartNodes.length === 0) {
     errors.push("FlowchartNodes cannot be empty");
   } else {
-    // Validate flowchart node structure
     newsData.flowchartNodes.forEach((node, i) => {
       if (!node.id) errors.push(`FlowchartNode ${i} missing id`);
       if (!node.label) errors.push(`FlowchartNode ${i} missing label`);
       if (!Array.isArray(node.connections)) errors.push(`FlowchartNode ${i} connections must be array`);
     });
   }
-  
+
   if (!Array.isArray(newsData.examRelevance) || newsData.examRelevance.length === 0) {
     errors.push("ExamRelevance cannot be empty");
   }
-  
+
   if (!Array.isArray(newsData.mcqs) || newsData.mcqs.length === 0) {
     errors.push("MCQs cannot be empty");
   } else {
@@ -801,15 +785,12 @@ function validateNewsSchema(newsData) {
       if (!mcq.answer?.trim()) errors.push(`MCQ ${i} missing answer`);
     });
   }
-  
+
   if (!newsData.mainsQuestion?.question?.trim()) {
     errors.push("MainsQuestion is required");
   }
-  
-  return {
-    isValid: errors.length === 0,
-    errors: errors
-  };
+
+  return { isValid: errors.length === 0, errors };
 }
 
 // -------------------------
@@ -817,21 +798,19 @@ function validateNewsSchema(newsData) {
 // -------------------------
 async function cleanupDuplicateNews() {
   console.log("🧹 Cleaning up duplicate news entries...");
-  
   try {
     const duplicates = await News.aggregate([
       { $group: { _id: "$title", count: { $sum: 1 }, docs: { $push: "$_id" } } },
-      { $match: { count: { $gt: 1 } } }
+      { $match: { count: { $gt: 1 } } },
     ]);
-    
+
     let removedCount = 0;
     for (const duplicate of duplicates) {
-      // Keep the first one, remove the rest
       const toRemove = duplicate.docs.slice(1);
       await News.deleteMany({ _id: { $in: toRemove } });
       removedCount += toRemove.length;
     }
-    
+
     console.log(`✅ Removed ${removedCount} duplicate entries`);
     return removedCount;
   } catch (err) {
@@ -842,25 +821,17 @@ async function cleanupDuplicateNews() {
 
 async function updateRelevanceScores() {
   console.log("🎯 Updating relevance scores for existing news...");
-  
   try {
     const allNews = await News.find({});
     let updatedCount = 0;
-    
     for (const news of allNews) {
-      const newScore = calculateRelevanceScore({
-        tags: news.tags,
-        publishedAt: news.publishedAt,
-        source: news.source
-      });
-      
+      const newScore = calculateRelevanceScore({ tags: news.tags, publishedAt: news.publishedAt, source: news.source });
       if (newScore !== news.relevanceScore) {
         news.relevanceScore = newScore;
         await news.save();
         updatedCount++;
       }
     }
-    
     console.log(`✅ Updated relevance scores for ${updatedCount} entries`);
     return updatedCount;
   } catch (err) {
@@ -875,16 +846,8 @@ async function updateRelevanceScores() {
 async function getTopRelevantNews(limit = 10, tags = [], minScore = 5) {
   try {
     const query = { relevanceScore: { $gte: minScore } };
-    if (tags.length > 0) {
-      query.tags = { $in: tags };
-    }
-    
-    const news = await News.find(query)
-      .sort({ relevanceScore: -1, publishedAt: -1 })
-      .limit(limit)
-      .select('title description relevanceScore publishedAt tags source')
-      .lean();
-      
+    if (tags.length > 0) query.tags = { $in: tags };
+    const news = await News.find(query).sort({ relevanceScore: -1, publishedAt: -1 }).limit(limit).select("title description relevanceScore publishedAt tags source").lean();
     return news;
   } catch (err) {
     console.error("❌ Query failed:", err.message);
@@ -894,15 +857,7 @@ async function getTopRelevantNews(limit = 10, tags = [], minScore = 5) {
 
 async function getNewsByDateRange(startDate, endDate) {
   try {
-    const news = await News.find({
-      publishedAt: { 
-        $gte: new Date(startDate), 
-        $lte: new Date(endDate) 
-      }
-    })
-    .sort({ publishedAt: -1 })
-    .lean();
-    
+    const news = await News.find({ publishedAt: { $gte: new Date(startDate), $lte: new Date(endDate) } }).sort({ publishedAt: -1 }).lean();
     return news;
   } catch (err) {
     console.error("❌ Date range query failed:", err.message);
@@ -912,14 +867,7 @@ async function getNewsByDateRange(startDate, endDate) {
 
 async function searchNews(searchTerm, limit = 20) {
   try {
-    const news = await News.find(
-      { $text: { $search: searchTerm } },
-      { score: { $meta: "textScore" } }
-    )
-    .sort({ score: { $meta: "textScore" }, publishedAt: -1 })
-    .limit(limit)
-    .lean();
-    
+    const news = await News.find({ $text: { $search: searchTerm } }, { score: { $meta: "textScore" } }).sort({ score: { $meta: "textScore" }, publishedAt: -1 }).limit(limit).lean();
     return news;
   } catch (err) {
     console.error("❌ Search failed:", err.message);
@@ -928,32 +876,24 @@ async function searchNews(searchTerm, limit = 20) {
 }
 
 // -------------------------
-// 🚀 Batch Operations
+// 🚀 Batch Operations & Analytics (kept as earlier)
 // -------------------------
 async function batchUpdateCategories() {
   console.log("📂 Updating categories for all news items...");
-  
   try {
     const news = await News.find({ categories: { $size: 0 } });
     let updatedCount = 0;
-    
     for (const item of news) {
       const categories = ["UPSC", "Current Affairs"];
-      
-      // Add specific categories based on tags
-      if (item.tags.some(tag => tagsConfig.high.includes(tag))) {
-        categories.push("High Priority");
-      }
+      if (item.tags.some((tag) => tagsConfig.high.includes(tag))) categories.push("High Priority");
       if (item.tags.includes("Economy")) categories.push("Economy");
       if (item.tags.includes("Polity")) categories.push("Polity");
       if (item.tags.includes("IR")) categories.push("International Relations");
       if (item.tags.includes("Environment")) categories.push("Environment");
-      
-      item.categories = [...new Set(categories)]; // Remove duplicates
+      item.categories = [...new Set(categories)];
       await item.save();
       updatedCount++;
     }
-    
     console.log(`✅ Updated categories for ${updatedCount} items`);
     return updatedCount;
   } catch (err) {
@@ -962,183 +902,32 @@ async function batchUpdateCategories() {
   }
 }
 
-// -------------------------
-// 📈 Advanced Analytics
-// -------------------------
-async function getDetailedAnalytics() {
+async function getContentAnalytics() {
   try {
-    const [
-      totalStats,
-      tagStats,
-      sourceStats,
-      recentStats,
-      scoreDistribution,
-      summaryQuality
-    ] = await Promise.all([
-      // Total and recent counts
-      News.aggregate([
-        {
-          $facet: {
-            total: [{ $count: "count" }],
-            today: [
-              { $match: { createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } },
-              { $count: "count" }
-            ],
-            thisWeek: [
-              { $match: { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
-              { $count: "count" }
-            ]
-          }
-        }
-      ]),
-      
-      // Tag distribution
-      News.aggregate([
-        { $unwind: "$tags" },
-        { $group: { _id: "$tags", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 15 }
-      ]),
-      
-      // Source reliability
-      News.aggregate([
-        { $group: { _id: "$source", count: { $sum: 1 }, avgScore: { $avg: "$relevanceScore" } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 }
-      ]),
-      
-      // Recent performance
-      News.aggregate([
-        { $match: { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
-        { $group: { 
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          count: { $sum: 1 },
-          avgScore: { $avg: "$relevanceScore" }
-        }},
-        { $sort: { _id: 1 } }
-      ]),
-      
-      // Score distribution
-      News.aggregate([
-        {
-          $bucket: {
-            groupBy: "$relevanceScore",
-            boundaries: [0, 3, 6, 8, 10],
-            default: "10+",
-            output: { count: { $sum: 1 } }
-          }
-        }
-      ]),
-      
-      // Summary quality check
-      News.aggregate([
-        {
-          $project: {
-            summaryLength: { $size: { $ifNull: ["$summary", []] } },
-            hasMCQs: { $gt: [{ $size: { $ifNull: ["$mcqs", []] } }, 0] },
-            hasMainsQ: { $ne: ["$mainsQuestion.question", ""] },
-            hasFlowchart: { $gt: [{ $size: { $ifNull: ["$flowchartNodes", []] } }, 0] }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            avgSummaryLength: { $avg: "$summaryLength" },
-            withMCQs: { $sum: { $cond: ["$hasMCQs", 1, 0] } },
-            withMainsQ: { $sum: { $cond: ["$hasMainsQ", 1, 0] } },
-            withFlowchart: { $sum: { $cond: ["$hasFlowchart", 1, 0] } },
-            total: { $sum: 1 }
-          }
-        }
-      ])
-    ]);
-    
-    return {
-      overview: {
-        total: totalStats[0]?.total[0]?.count || 0,
-        today: totalStats[0]?.today[0]?.count || 0,
-        thisWeek: totalStats[0]?.thisWeek[0]?.count || 0
-      },
-      topTags: tagStats,
-      topSources: sourceStats,
-      dailyTrend: recentStats,
-      scoreDistribution: scoreDistribution,
-      contentQuality: summaryQuality[0] || {}
-    };
+    const total = await News.countDocuments();
+    const last24 = await News.countDocuments({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } });
+    const tagDistribution = await News.aggregate([{ $unwind: "$tags" }, { $group: { _id: "$tags", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 10 }]);
+    const avgScoreRes = await News.aggregate([{ $group: { _id: null, avgScore: { $avg: "$relevanceScore" } } }]);
+    const summaryStats = await News.aggregate([{ $project: { summaryLength: { $size: { $ifNull: ["$summary", []] } } } }, { $group: { _id: null, avgSummaryLength: { $avg: "$summaryLength" }, minLength: { $min: "$summaryLength" }, maxLength: { $max: "$summaryLength" } } }]);
+    return { totalContent: total, todayContent: last24, topTags: tagDistribution, avgRelevanceScore: avgScoreRes[0]?.avgScore || 0, summaryStats: summaryStats[0] || { avgSummaryLength: 0, minLength: 0, maxLength: 0 } };
   } catch (err) {
-    console.error("❌ Advanced analytics failed:", err.message);
-    return null;
+    console.error("Analytics failed:", err.message);
+    return { totalContent: 0, todayContent: 0, topTags: [], avgRelevanceScore: 0, summaryStats: { avgSummaryLength: 0, minLength: 0, maxLength: 0 } };
   }
 }
 
 // -------------------------
-// 🎯 Content Quality Checker
-// -------------------------
-async function validateAllContent() {
-  console.log("🔍 Validating all content quality...");
-  
-  try {
-    const allNews = await News.find({}).lean();
-    const issues = [];
-    
-    for (const news of allNews) {
-      const validation = validateNewsSchema(news);
-      if (!validation.isValid) {
-        issues.push({
-          id: news._id,
-          title: news.title,
-          errors: validation.errors
-        });
-      }
-    }
-    
-    console.log(`📊 Content validation complete:`);
-    console.log(`   Total items: ${allNews.length}`);
-    console.log(`   Issues found: ${issues.length}`);
-    console.log(`   Quality rate: ${((allNews.length - issues.length) / allNews.length * 100).toFixed(1)}%`);
-    
-    if (issues.length > 0) {
-      console.log("\n⚠️ Items with issues:");
-      issues.slice(0, 5).forEach(issue => {
-        console.log(`   - ${issue.title}: ${issue.errors.join(', ')}`);
-      });
-      if (issues.length > 5) {
-        console.log(`   ... and ${issues.length - 5} more`);
-      }
-    }
-    
-    return {
-      total: allNews.length,
-      issues: issues.length,
-      qualityRate: ((allNews.length - issues.length) / allNews.length * 100),
-      problemItems: issues
-    };
-  } catch (err) {
-    console.error("❌ Content validation failed:", err.message);
-    return null;
-  }
-}
-
-// -------------------------
-// 🚨 Emergency Recovery Functions
+// 🚨 Emergency Backup / Restore
 // -------------------------
 async function emergencyBackup() {
   console.log("🚨 Creating emergency backup...");
-  
   try {
     const allNews = await News.find({}).lean();
-    const backupData = {
-      timestamp: new Date().toISOString(),
-      count: allNews.length,
-      data: allNews
-    };
-    
+    const backupData = { timestamp: new Date().toISOString(), count: allNews.length, data: allNews };
     const backupDir = path.join(process.cwd(), "backups");
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
-    
     const filename = path.join(backupDir, `news-backup-${Date.now()}.json`);
     fs.writeFileSync(filename, JSON.stringify(backupData, null, 2));
-    
     console.log(`✅ Backup created: ${filename} (${allNews.length} items)`);
     return filename;
   } catch (err) {
@@ -1149,25 +938,18 @@ async function emergencyBackup() {
 
 async function restoreFromBackup(backupFile) {
   console.log(`🔄 Restoring from backup: ${backupFile}`);
-  
   try {
-    const backupData = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-    
-    // Clear existing data (be careful!)
+    const backupData = JSON.parse(fs.readFileSync(backupFile, "utf8"));
     console.log("⚠️ WARNING: This will delete all existing news data!");
     console.log("Proceeding in 5 seconds... (Ctrl+C to cancel)");
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     await News.deleteMany({});
     console.log("🗑️ Existing data cleared");
-    
-    // Restore data
     for (const item of backupData.data) {
-      delete item._id; // Let MongoDB generate new IDs
+      delete item._id;
       const newsDoc = new News(item);
       await newsDoc.save();
     }
-    
     console.log(`✅ Restored ${backupData.data.length} items from backup`);
     return backupData.data.length;
   } catch (err) {
@@ -1177,7 +959,7 @@ async function restoreFromBackup(backupFile) {
 }
 
 // -------------------------
-// 🎛️ Configuration Manager
+// 🎛️ Config
 // -------------------------
 const CONFIG = {
   BATCH_SIZE: 5,
@@ -1188,7 +970,7 @@ const CONFIG = {
   TARGET_SUMMARY_WORDS: 200,
   DEFAULT_CATEGORIES: ["UPSC", "Current Affairs"],
   GEMINI_TEMPERATURE: 0.1,
-  GEMINI_MAX_TOKENS: 2048
+  GEMINI_MAX_TOKENS: 2048,
 };
 
 function updateConfig(newConfig) {
@@ -1201,48 +983,94 @@ function getConfig() {
 }
 
 // -------------------------
-// 🎪 Complete Exported API
+// 🎪 Exports
 // -------------------------
 module.exports = {
-  // Main pipeline functions
+  // Main pipeline
   runContentPipeline,
   testGeminiConnection,
-  
-  // Content management
+
+  // Processing
   generateAndStoreContent,
   fetchTop5News_Prod,
   fetchTop5News_Dev,
-  
-  // Utilities and helpers
+
+  // Utilities
   calculateRelevanceScore,
   normalizeGeminiOutput,
   validateNewsSchema,
-  
-  // Analytics and insights
+  getUnsplashImageUrl,
+  generateImageSearchTerm,
+
+  // Analytics / maintenance
   getContentAnalytics,
-  getDetailedAnalytics,
+  getDetailedAnalytics: async () => {
+    try {
+      // Reuse existing detailed analytics code (concise wrapper)
+      const [
+        totalStats,
+        tagStats,
+        sourceStats,
+        recentStats,
+        scoreDistribution,
+        summaryQuality,
+      ] = await Promise.all([
+        News.aggregate([
+          {
+            $facet: {
+              total: [{ $count: "count" }],
+              today: [{ $match: { createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } }, { $count: "count" }],
+              thisWeek: [{ $match: { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }, { $count: "count" }],
+            },
+          },
+        ]),
+
+        News.aggregate([{ $unwind: "$tags" }, { $group: { _id: "$tags", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 15 }]),
+
+        News.aggregate([{ $group: { _id: "$source", count: { $sum: 1 }, avgScore: { $avg: "$relevanceScore" } } }, { $sort: { count: -1 } }, { $limit: 10 }]),
+
+        News.aggregate([{ $match: { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 }, avgScore: { $avg: "$relevanceScore" } } }, { $sort: { _id: 1 } }]),
+
+        News.aggregate([{ $bucket: { groupBy: "$relevanceScore", boundaries: [0, 3, 6, 8, 10], default: "10+", output: { count: { $sum: 1 } } } }]),
+
+        News.aggregate([{ $project: { summaryLength: { $size: { $ifNull: ["$summary", []] } }, hasMCQs: { $gt: [{ $size: { $ifNull: ["$mcqs", []] } }, 0] }, hasMainsQ: { $ne: ["$mainsQuestion.question", ""] }, hasFlowchart: { $gt: [{ $size: { $ifNull: ["$flowchartNodes", []] } }, 0] } } }, { $group: { _id: null, avgSummaryLength: { $avg: "$summaryLength" }, withMCQs: { $sum: { $cond: ["$hasMCQs", 1, 0] } }, withMainsQ: { $sum: { $cond: ["$hasMainsQ", 1, 0] } }, withFlowchart: { $sum: { $cond: ["$hasFlowchart", 1, 0] } }, total: { $sum: 1 } } }]),
+      ]);
+
+      return {
+        overview: {
+          total: totalStats[0]?.total[0]?.count || 0,
+          today: totalStats[0]?.today[0]?.count || 0,
+          thisWeek: totalStats[0]?.thisWeek[0]?.count || 0,
+        },
+        topTags: tagStats,
+        topSources: sourceStats,
+        dailyTrend: recentStats,
+        scoreDistribution,
+        contentQuality: summaryQuality[0] || {},
+      };
+    } catch (err) {
+      console.error("❌ Advanced analytics failed:", err.message);
+      return null;
+    }
+  },
+
   validateAllContent,
-  
-  // Query helpers
   getTopRelevantNews,
   getNewsByDateRange,
   searchNews,
-  
-  // Maintenance functions
+
   cleanupDuplicateNews,
   updateRelevanceScores,
   batchUpdateCategories,
-  
-  // Emergency functions
+
   emergencyBackup,
   restoreFromBackup,
-  
-  // Configuration
+
   updateConfig,
   getConfig,
-  
-  // Constants
+
+  // constants
   tagsConfig,
   allTags,
-  CONFIG
+  CONFIG,
 };
