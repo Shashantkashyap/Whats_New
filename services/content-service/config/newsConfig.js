@@ -158,6 +158,8 @@ const NEWS_CONFIG = {
   // Collection knobs
   articlesPerSource: num(process.env.NEWS_ARTICLES_PER_SOURCE, 5),
   maxAgeHours: num(process.env.NEWS_MAX_AGE_HOURS, 24),
+  // Fallback topic used when Gemini does not choose one via the scrape_news tool.
+  defaultTopic: process.env.NEWS_DEFAULT_TOPIC || "India policy governance economy",
   minBodyChars: num(process.env.NEWS_MIN_BODY_CHARS, 250),
   maxBodyChars: num(process.env.NEWS_MAX_BODY_CHARS, 20_000),
 

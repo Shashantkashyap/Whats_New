@@ -595,39 +595,39 @@ async function generateAndStoreContent(filteredNews, options = {}) {
 }
 
 // -------------------------
-// 📡 Direct Top 5 News Fetcher (Prod)
+// 📡 Top 5 News Fetcher (Prod) — Chrome MCP provider
 // -------------------------
-async function fetchTop5News_Prod() {
-  const today = new Date().toISOString().split("T")[0];
+// Gemini NO LONGER invents news. Instead it decides WHEN current news is needed
+// and calls the scrape_news tool; the backend browses real newspaper sites via
+// Chrome MCP (see services/geminiTools.js + providers/ChromeMCPNewsProvider.js).
+// This function keeps its name, signature, and return shape so everything
+// downstream (generateAndStoreContent, relevance, images, MCQs, ...) is unchanged.
+const { collectNews } = require("../services/geminiTools");
 
-  const prompt = `
-You are India's leading UPSC news curator. Today's date: ${today}.
-Return EXACTLY 5 UPSC-relevant news items from the last 48 hours as a JSON array ONLY.
+// Map a canonical provider article -> the legacy pipeline item shape.
+function mapProviderArticleToNewsItem(article) {
+  const hay = `${article.category || ""} ${article.title || ""}`.toLowerCase();
+  const tags = allTags.filter((t) => hay.includes(t.toLowerCase())).slice(0, 4);
+  return {
+    title: article.title,
+    url: article.url,
+    source: article.source || "Unknown",
+    publishedAt: article.publishedAt || new Date().toISOString(),
+    author: article.author || "News Desk",
+    tags,
+    content: article.content || "",
+    categories: ["UPSC", "Current Affairs"],
+  };
+}
 
-Each item must include:
-- title (string)
-- url (string)
-- source (string)
-- publishedAt (ISO 8601 string)
-- tags (array of strings)
-- content (2-3 sentence factual summary)
-
-Constraints:
-- Use only reliable sources (PIB, The Hindu, Indian Express, ET, Livemint).
-- Avoid opinion pieces, entertainment, sports.
-- Output strictly JSON array and nothing else.
-  `;
-
+async function fetchTop5News_Prod(deps = {}) {
   try {
-    const parsed = await generateWithGemini(prompt, 3);
-    if (Array.isArray(parsed)) return parsed.slice(0, 5);
-    if (parsed && Array.isArray(parsed.news)) return parsed.news.slice(0, 5);
-    if (parsed && typeof parsed === "object") {
-      const arr = Object.values(parsed).find((v) => Array.isArray(v));
-      if (arr) return arr.slice(0, 5);
+    const articles = await collectNews(deps);
+    if (!Array.isArray(articles) || articles.length === 0) {
+      console.warn("⚠️ fetchTop5News_Prod: no articles collected.");
+      return [];
     }
-    console.warn("⚠️ fetchTop5News_Prod: unexpected response shape, returning empty.");
-    return [];
+    return articles.slice(0, 5).map(mapProviderArticleToNewsItem);
   } catch (err) {
     console.error("❌ Production news fetch failed:", err.message);
     return [];
