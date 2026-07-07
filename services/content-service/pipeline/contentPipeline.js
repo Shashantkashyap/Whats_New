@@ -794,6 +794,30 @@ function validateNewsSchema(newsData) {
 }
 
 // -------------------------
+// 🧪 Validate All Stored Content
+// -------------------------
+// Runs validateNewsSchema() across every stored article and returns a report.
+// (Previously exported but never defined - requiring this module threw a
+//  ReferenceError. Defining it here restores a loadable module.)
+async function validateAllContent() {
+  console.log("🧪 Validating all stored news content...");
+  try {
+    const allNews = await News.find({}).lean();
+    const invalid = [];
+    for (const item of allNews) {
+      const { isValid, errors } = validateNewsSchema(item);
+      if (!isValid) invalid.push({ id: String(item._id), title: item.title, errors });
+    }
+    const report = { total: allNews.length, valid: allNews.length - invalid.length, invalid: invalid.length, details: invalid };
+    console.log(`✅ Validation complete: ${report.valid}/${report.total} valid`);
+    return report;
+  } catch (err) {
+    console.error("❌ Content validation failed:", err.message);
+    return { total: 0, valid: 0, invalid: 0, details: [], error: err.message };
+  }
+}
+
+// -------------------------
 // 🔧 Data Cleanup Utilities
 // -------------------------
 async function cleanupDuplicateNews() {
