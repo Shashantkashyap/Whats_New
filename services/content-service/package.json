@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "agent-base": "^7.1.4",
     "ansi-regex": "^5.0.1",
     "ansi-styles": "^4.3.0",
