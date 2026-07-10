@@ -1,0 +1,13 @@
+```json
+{
+  "headline": "Kerala Dolphin Death Highlights India's Marine Plastic Crisis & Policy Gaps",
+  "why": "The tragic death of a dolphin in Kerala, attributed to plastic ingestion, serves as a stark indicator of the pervasive marine plastic pollution along India's coastlines. This incident brings to the forefront critical issues concerning environmental governance, the efficacy of existing waste management policies like the Plastic Waste Management Rules, 2016 (and its amendments), and the urgent need for sustainable practices to protect marine biodiversity and coastal ecosystems. It underscores the real-world consequences of inadequate waste disposal and challenges India's commitment to global environmental goals.",
+  "summary": [
+    "A bottlenose dolphin was found dead off the coast of Kerala, with a subsequent necropsy revealing a significant accumulation of plastic debris, including bags and fishing nets, in its digestive system as the primary cause of death.",
+    "The Ministry of Environment, Forest and Climate Change (MoEFCC) expressed serious concern, reiterating the government's commitment to strengthening the implementation of the Plastic Waste Management (Amendment) Rules, 2022, which bans identified single-use plastic items.",
+    "The legal framework involved includes the Environment (Protection) Act, 1986, and specifically the Plastic Waste Management Rules, 2016 (amended in 2021 and 2022), which mandate Extended Producer Responsibility (EPR) and regulate plastic waste.",
+    "The incident highlights severe impacts on marine biodiversity, threatening endangered species, affecting local fishing communities through reduced catches, and raising public health concerns regarding microplastic contamination in the food chain.",
+    "Economic implications include the substantial cost burden on state governments for waste collection, processing, and remediation efforts, alongside potential losses in tourism revenue due to polluted beaches and coastal areas.",
+    "India's commitment to UN Sustainable Development Goal 14 (Life Below Water) and its participation in international conventions like MARPOL (International Convention for the Prevention of Pollution from Ships) are challenged by such incidents, emphasizing the need for global cooperation.",
+    "This event follows a series of similar incidents across Indian coasts, indicating a persistent and escalating problem of marine plastic pollution despite existing regulatory frameworks and awareness campaigns.",
+    "Implementation challenges

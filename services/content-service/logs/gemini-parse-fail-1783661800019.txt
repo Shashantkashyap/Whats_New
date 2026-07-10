@@ -1,0 +1,26 @@
+{
+  "headline": "Australia's 2011 Uranium Sales to India: Congress Challenges Modi Govt Claim",
+  "why": "The news highlights a political controversy where the Indian National Congress party is challenging the current Modi government's claims of a breakthrough in securing uranium supplies from Australia. Congress asserts that the crucial approval for uranium sales was granted by Australia's then-ruling Labor party in 2011, during the UPA government's tenure. This debate underscores the political credit-claiming over significant foreign policy achievements and the historical context of India-Australia civil nuclear cooperation, which is vital for India's energy security.",
+  "summary": [
+    "The Indian National Congress party stated that Australia's ruling Labor party, under Prime Minister Julia Gillard, approved uranium sales to India in 2011, predating the Modi government's tenure.",
+    "This statement directly counters any narrative suggesting the current government was solely responsible for initiating or securing the uranium supply agreement with Australia.",
+    "The India-Australia Civil Nuclear Cooperation Agreement, which operationalized these sales, was signed in September 2014 during Prime Minister Modi's visit to Australia and came into force in November 2015.",
+    "The agreement allows Australia, a major uranium producer, to export uranium to India for peaceful purposes, bolstering India's energy security and nuclear power program.",
+    "Australia's decision in 2011 marked a significant shift from its long-standing policy of not selling uranium to countries that had not signed the Nuclear Non-Proliferation Treaty (NPT), following India's receipt of a waiver from the Nuclear Suppliers Group (NSG) in 2008.",
+    "The political discourse reflects ongoing competition between major parties to claim credit for diplomatic successes and strategic partnerships that benefit national interests.",
+    "Economically, access to Australian uranium is crucial for India's expanding nuclear power capacity, which aims to reduce reliance on fossil fuels and enhance energy independence.",
+    "The historical context includes decades of India's efforts to secure international civil nuclear cooperation despite its non-NPT status, culminating in the NSG waiver and subsequent bilateral agreements.",
+    "Future implications involve continued strengthening of the India-Australia strategic partnership, with energy cooperation as a key pillar, alongside defense and economic ties.",
+    "Exam relevance includes understanding India's foreign policy evolution, energy security challenges, and the role of international agreements in bilateral relations."
+  ],
+  "flowchartNodes": [
+    {
+      "id": "step1",
+      "label": "Background/Historical Context",
+      "content": "Historically, Australia maintained a policy of not selling uranium to countries that had not signed the Nuclear Non-Proliferation Treaty (NPT). India, a non-signatory, sought to expand its civil nuclear program and gained a special waiver from the Nuclear Suppliers Group (NSG) in 2008, paving the way for international civil nuclear cooperation.",
+      "connections": ["step2"]
+    },
+    {
+      "id": "step2",
+      "label": "Key Decision & Agreement",
+      "content": "In 2011, Australia's then-

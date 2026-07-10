@@ -1,0 +1,4 @@
+```json
+{
+  "headline": "Australia's 2011 Uranium Sale Approval to India: Congress Counters Modi's Claim",
+  "why": "The news highlights a political controversy in India regarding the credit for securing Australia's approval for uranium sales. While the current government may imply it as a recent diplomatic achievement, the Congress party asserts that the crucial decision was

@@ -1,0 +1,4 @@
+```json
+{
+  "headline": "Air India Aborted Takeoff: Aviation Safety & Regulatory Oversight Concerns",
+  "why": "The incident of an Air India flight aborting takeoff due to a technical snag, specifically an engine issue, underscores critical challenges in India's rapidly expanding aviation sector. It highlights the paramount importance of stringent aircraft maintenance protocols, effective regulatory oversight by the Directorate General

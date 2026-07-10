@@ -1,0 +1,4 @@
+```json
+{
+  "headline": "Air India takeoff abort: Technical snag raises aviation safety concerns",
+  "why": "The incident highlights critical issues in aviation safety protocols, maintenance standards, and regulatory oversight by the Directorate General of Civil Aviation (DGCA). While an aborted takeoff demonstrates the effectiveness of safety systems in preventing a potential disaster, it simultaneously raises questions about the frequency of such sn

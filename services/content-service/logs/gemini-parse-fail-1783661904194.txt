@@ -1,0 +1,31 @@
+```json
+{
+  "headline": "Dolphin Death in Kerala Highlights India's Marine Plastic Pollution Crisis",
+  "why": "The recent discovery of a deceased dolphin in Kerala, with post-mortem findings indicating plastic ingestion as a significant factor, serves as a stark and tragic indicator of India's escalating marine plastic pollution crisis. This incident brings to the forefront the severe ecological impact on marine biodiversity, the inadequacy of current waste management infrastructure in coastal regions, and the urgent need for more stringent policy implementation and public awareness. It underscores the direct link between human consumption patterns, particularly single-use plastics, and environmental degradation, posing a critical challenge to India's coastal ecosystems, fisheries, and blue economy aspirations.",
+  "summary": [
+    "A dolphin was found dead off the coast of Kerala, with preliminary reports suggesting its demise was linked to the ingestion of significant quantities of plastic waste, highlighting the direct threat to marine life.",
+    "The Ministry of Environment, Forest and Climate Change (MoEFCC) has reiterated its commitment to the 'Swachh Sagar, Surakshit Sagar' campaign and the Plastic Waste Management Rules, 2016 (amended 2021), emphasizing source reduction and improved waste collection mechanisms.",
+    "The issue is governed by the Environment (Protection) Act, 1986, and the Wildlife (Protection) Act, 1972, which provide legal frameworks for environmental conservation and protection of marine species from pollution.",
+    "Coastal communities, traditional fishing livelihoods, and the tourism sector face severe impacts due to marine plastic pollution, including reduced fish stocks, entanglement of marine animals, and aesthetic degradation of beaches.",
+    "Economic implications include potential losses in the fisheries and tourism industries, increased costs for waste management and clean-up operations, and the need for investment in circular economy models for plastic recycling.",
+    "India's efforts to combat marine plastic pollution align with global initiatives such as the UN Environment Programme's (UNEP) resolutions on plastic pollution and the Sustainable Development Goal 14 (Life Below Water).",
+    "Previous incidents of marine animal deaths attributed to plastic ingestion have been reported across various Indian states, indicating a persistent and worsening problem despite existing regulatory frameworks.",
+    "Implementation challenges include inadequate infrastructure for waste segregation and recycling in coastal areas, lack of consistent enforcement of plastic bans, and insufficient public awareness regarding responsible waste disposal.",
+    "The future roadmap involves strengthening the Extended Producer Responsibility (EPR) framework for plastic producers, promoting eco-friendly alternatives, and enhancing community participation in coastal clean-up drives.",
+    "Exam relevance includes questions on environmental pollution, biodiversity conservation, waste management policies, international environmental conventions, and the impact of human activities on ecosystems."
+  ],
+  "flowchartNodes": [
+    {
+      "id": "step1",
+      "label": "Background of Marine Plastic Pollution",
+      "content": "India, with its extensive coastline, faces a significant challenge from marine plastic pollution, driven by inadequate waste management, rapid urbanization, and high consumption of single-use plastics. Existing policies like the Plastic Waste Management Rules, 2016 (amended 2021), aim to regulate plastic waste, but implementation gaps persist, leading to substantial plastic leakage into oceans.",
+      "connections": ["step2"]
+    },
+    {
+      "id": "step2",
+      "label": "Dolphin Death in Kerala: Trigger Event",
+      "content": "A recent incident involved the discovery of a deceased dolphin off the coast of Kerala. Post-mortem examinations revealed the presence of significant plastic debris in its digestive system, strongly implicating plastic ingestion as a cause or major contributing factor to its death, bringing the issue into sharp public and policy focus.",
+      "connections": ["step3"]
+    },
+    {
+      

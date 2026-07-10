@@ -219,7 +219,7 @@ The Content Service is the brain of the platform. It handles all news content li
 
 **Pipeline Modes:**
 - **`dev`** — Uses 5 hardcoded sample UPSC news articles for testing
-- **`prod`** — Asks Gemini to identify the 5 most relevant real-world UPSC news from the last 48 hours
+- **`prod`** — Collects **real** articles by browsing approved newspaper sites via Chrome MCP. Gemini decides *when* news is needed and calls the `scrape_news` tool; it never invents articles. See [`services/content-service/docs/NEWS_PIPELINE_ARCHITECTURE.md`](services/content-service/docs/NEWS_PIPELINE_ARCHITECTURE.md).
 
 ---
 

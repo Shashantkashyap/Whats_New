@@ -1,0 +1,22 @@
+```json
+{
+  "headline": "India-Australia seal landmark nuclear energy & defence pacts",
+  "why": "The significance of India and Australia sealing landmark pacts on nuclear energy and defence lies in the deepening strategic convergence between two key Indo-Pacific partners. This move is crucial for enhancing regional security, diversifying India's energy sources, and strengthening a rules-based international order amidst evolving geopolitical dynamics, particularly concerning China's growing influence in the region. It signals a robust commitment to a comprehensive strategic partnership that extends beyond traditional economic ties to critical areas of national security and energy independence.",
+  "summary": [
+    "India and Australia have concluded landmark agreements on nuclear energy cooperation and enhanced defence partnership during a high-level bilateral visit.",
+    "The nuclear energy pact facilitates the supply of Australian uranium to India for peaceful purposes, bolstering India's energy security and clean energy transition goals.",
+    "The defence agreement aims to deepen military-to-military engagement, joint exercises, defence technology sharing, and maritime security cooperation in the Indo-Pacific region.",
+    "These pacts underscore the growing strategic convergence between the two nations, particularly within the framework of the Quad grouping and shared concerns over regional stability and freedom of navigation.",
+    "Economically, the agreements are expected to boost trade in critical minerals, defence equipment, and technology transfer, fostering economic resilience and supply chain diversification.",
+    "Internationally, the enhanced partnership reinforces the rules-based international order and acts as a significant pillar in balancing geopolitical challenges in the Indo-Pacific.",
+    "Historically, this builds upon the 2014 civil nuclear cooperation agreement and the 2020 Comprehensive Strategic Partnership, elevating bilateral ties to a new strategic level.",
+    "Implementation challenges may include regulatory harmonization, technology transfer protocols, and ensuring seamless integration of defence capabilities and interoperability.",
+    "The future roadmap includes regular high-level dialogues, joint research and development in defence, and expanded cooperation in critical and emerging technologies.",
+    "Exam relevance: GS-II (International Relations, Bilateral Groupings, India and its Neighbourhood), GS-III (Energy Security, Defence Technology, Internal Security, Science & Technology)."
+  ],
+  "flowchartNodes": [
+    {
+      "id": "step1",
+      "label": "Background/Historical Context",
+      "content": "India and Australia have steadily deepened their strategic partnership, notably with the 2014 Civil Nuclear Cooperation Agreement and the elevation to a Comprehensive Strategic Partnership in 2020. Both nations are key members of the Quad, sharing a vision for a free, open, and inclusive Indo-Pacific region.",
+      "connections": ["step2"]
