@@ -113,9 +113,17 @@ async function runToolLoop(model, handler, log) {
   return articles;
 }
 
+// Provider selection lives here so the tool stays the single seam Gemini sees.
+// Default is RSS (machine-readable, never blocked); chrome-mcp is opt-in via
+// NEWS_PROVIDER=chrome-mcp for local experiments.
 function defaultProvider(cfg) {
-  const ChromeMCPNewsProvider = require("../providers/ChromeMCPNewsProvider");
-  return new ChromeMCPNewsProvider(cfg);
+  const name = (cfg.provider || "rss").toLowerCase();
+  if (name === "chrome-mcp" || name === "chrome" || name === "mcp") {
+    const ChromeMCPNewsProvider = require("../providers/ChromeMCPNewsProvider");
+    return new ChromeMCPNewsProvider(cfg);
+  }
+  const RSSNewsProvider = require("../providers/RSSNewsProvider");
+  return new RSSNewsProvider(cfg);
 }
 
 function safeDefaultModel(cfg, log) {
@@ -124,7 +132,7 @@ function safeDefaultModel(cfg, log) {
     if (!process.env.GEMINI_API_KEY) return null;
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     return genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       tools: [{ functionDeclarations: [SCRAPE_NEWS_DECLARATION] }],
     });
   } catch (err) {

@@ -1,0 +1,61 @@
+{
+  "headline": "India-Australia Seal Landmark Pacts on Nuclear Energy & Defence",
+  "why": "The sealing of landmark pacts between India and Australia on nuclear energy and defence signifies a major strategic realignment in the Indo-Pacific region. This development is crucial in the context of evolving geopolitical dynamics, particularly the rise of China and the need for like-minded democracies to enhance security and energy cooperation. It moves beyond traditional trade ties to establish a deeper strategic partnership, impacting regional stability, energy security, and defence capabilities, thereby strengthening the Quad framework and India's Act East policy.",
+  "summary": [
+    "India and Australia have formally concluded landmark agreements focusing on enhanced cooperation in nuclear energy and defence sectors during a high-level bilateral summit.",
+    "The agreements are expected to facilitate greater collaboration in civil nuclear technology, including potential uranium supply from Australia to India, bolstering India's energy security needs.",
+    "In defence, the pacts aim to deepen military-to-military engagement, joint exercises, defence technology sharing, and maritime security cooperation in the Indo-Pacific.",
+    "These agreements build upon the existing Comprehensive Strategic Partnership between the two nations, elevating their bilateral relationship to a new level of strategic convergence.",
+    "Economically, the enhanced cooperation is anticipated to boost trade and investment, particularly in critical minerals, renewable energy, and defence manufacturing, aligning with 'Make in India' initiatives.",
+    "Internationally, this partnership reinforces the Quad grouping (India, Australia, Japan, USA) and serves as a significant counterweight to growing geopolitical challenges in the Indo-Pacific region.",
+    "Historically, Australia lifted its long-standing ban on uranium sales to India in 2014, and these new pacts further operationalize and expand the scope of nuclear cooperation.",
+    "Implementation challenges may include regulatory harmonization, technology transfer protocols, and ensuring seamless integration of defence capabilities and interoperability.",
+    "The future roadmap includes regular high-level dialogues, joint working groups to oversee implementation, and expansion into new areas like critical and emerging technologies.",
+    "Exam relevance includes GS-II (International Relations - Bilateral, Regional, Global Groupings), GS-III (Security - Defence Technology, Energy Security), and Prelims (Current Affairs, International Organizations)."
+  ],
+  "flowchartNodes": [
+    {
+      "id": "step1",
+      "label": "Background/Historical Context",
+      "content": "India and Australia share a Comprehensive Strategic Partnership, with growing convergence on Indo-Pacific security and economic interests. Australia lifted its uranium export ban to India in 2014, paving the way for civil nuclear cooperation, while defence ties have steadily strengthened through joint exercises like AUSINDEX and multilateral forums like the Quad.",
+      "connections": ["step2"]
+    },
+    {
+      "id": "step2",
+      "label": "Current Development/Trigger Event",
+      "content": "During a recent high-level visit by Prime Minister Modi to Australia, both nations officially sealed landmark pacts. These agreements specifically target enhanced cooperation in the critical sectors of nuclear energy and defence, marking a significant upgrade in their bilateral relationship.",
+      "connections": ["step3"]
+    },
+    {
+      "id": "step3",
+      "label": "Government Response/Policy Action",
+      "content": "The governments of India and Australia have committed to deepening collaboration through these pacts. This includes facilitating Australian uranium supply for India's civil nuclear program and expanding defence cooperation through joint research, development, manufacturing, and maritime domain awareness initiatives, as outlined in joint statements.",
+      "connections": ["step4"]
+    },
+    {
+      "id": "step4",
+      "label": "Stakeholders and Impact Analysis",
+      "content": "These pacts impact India's energy sector by securing potential uranium supplies and enhancing its strategic autonomy. For defence, it strengthens regional security architecture, benefiting both nations' armed forces and defence industries. The agreements also signal a stronger front for democracies in the Indo-Pacific, influencing regional geopolitical stability.",
+      "connections": ["step5"]
+    },
+    {
+      "id": "step5",
+      "label": "Future Implications and Way Forward",
+      "content": "The agreements are expected to lead to increased strategic alignment, greater interoperability between defence forces, and a boost in bilateral trade and investment. Future challenges include navigating complex regulatory frameworks for nuclear technology transfer and ensuring sustained political will to deepen defence industrial collaboration, with a focus on critical and emerging technologies.",
+      "connections": []
+    }
+  ],
+  "examRelevance": [
+    "GS-II: International Relations - Bilateral, Regional and Global Groupings and Agreements involving India and/or affecting India's interests",
+    "GS-III: Security - Defence technology; Energy - Nuclear energy, Energy security",
+    "Prelims: Current Affairs - International relations, Defence exercises, Nuclear cooperation; Geography - Uranium producing countries"
+  ],
+  "mcqs": [
+    {
+      "question": "Which of the following countries recently sealed landmark pacts with India on nuclear energy and defence?",
+      "options": ["Japan", "United States", "Australia", "France"],
+      "answer": "Australia"
+    }
+  ],
+  "mainsQuestion": {
+    "question": "Analyze the strategic significance of the recently concluded nuclear energy

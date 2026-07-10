@@ -6,7 +6,7 @@ async function testGemini() {
   const { GoogleGenerativeAI } = genAI;
   const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash" });
 
   const prompt = "Give me a 2 line summary of Chandrayaan-3 mission in JSON format with keys {summary}";
   

@@ -1,0 +1,32 @@
+{
+  "headline": "Air India flight aborts takeoff due to technical snag, raises aviation safety concerns",
+  "why": "This incident highlights the critical and recurring issue of aviation safety in India, particularly concerning technical snags in aircraft. While an aborted takeoff is a safety protocol, the frequency of such incidents across various airlines raises questions about maintenance standards, regulatory oversight by the Directorate General of Civil Aviation (DGCA), and the overall airworthiness of the fleet. It underscores the constant challenge of balancing rapid growth in the aviation sector with stringent safety compliance to ensure passenger confidence and prevent potential disasters.",
+  "summary": [
+    "An Air India flight, AI 264, scheduled from Thiruvananthapuram to Bengaluru, aborted its takeoff on July 10, 2026, after pilots detected a technical snag.",
+    "The Directorate General of Civil Aviation (DGCA) is expected to initiate a standard inquiry into the incident to ascertain the cause of the technical malfunction and review the airline's maintenance procedures.",
+    "Aviation safety in India is primarily governed by the Aircraft Act, 1934, and the Aircraft Rules, 1937, with the DGCA serving as the principal regulatory body responsible for airworthiness and operational standards.",
+    "The incident led to delays and inconvenience for passengers, underscoring the direct impact of technical issues on travel plans and the psychological aspect of passenger safety and trust in air travel.",
+    "Such operational disruptions can result in significant economic implications for airlines, including costs associated with rescheduling, passenger accommodation, and potential reputational damage affecting future bookings.",
+    "Globally, aviation safety standards are largely influenced by the International Civil Aviation Organization (ICAO), to which India is a signatory, necessitating adherence to international best practices in maintenance and operations.",
+    "India has witnessed several similar incidents of technical snags and aborted takeoffs in recent years, prompting the DGCA to conduct special audits and issue advisories to airlines regarding maintenance protocols and operational safety.",
+    "Challenges in implementation include ensuring consistent quality of aircraft maintenance across diverse fleets, addressing the shortage of skilled aviation engineers, and effectively monitoring compliance by all airlines.",
+    "The future roadmap for Indian aviation safety involves adopting advanced predictive maintenance technologies, enhancing real-time monitoring systems, and continuous training for flight crew and ground staff.",
+    "Exam relevance includes topics like regulatory bodies (DGCA), infrastructure development (aviation sector), disaster management (preventive aspects), and governance issues related to public safety."
+  ],
+  "flowchartNodes": [
+    {
+      "id": "step1",
+      "label": "Background/Historical Context",
+      "content": "India's aviation sector has experienced rapid growth, becoming one of the fastest-growing markets globally. This expansion places immense pressure on existing infrastructure and regulatory mechanisms, with the Directorate General of Civil Aviation (DGCA) tasked with ensuring stringent safety standards amidst increasing air traffic and fleet size. Historically, the DGCA has periodically issued advisories and conducted audits to address recurring safety concerns.",
+      "connections": ["step2"]
+    },
+    {
+      "id": "step2",
+      "label": "Current Development/Trigger Event",
+      "content": "On July 10, 2026, Air India flight AI 264, en route from Thiruvananthapuram to Bengaluru, aborted its takeoff due to a detected technical snag. This incident, while a successful execution of safety protocols, highlights a potential underlying issue with aircraft maintenance or pre-flight checks, bringing aviation safety back into public and regulatory focus.",
+      "connections": ["step3"]
+    },
+    {
+      "id": "step3",
+      "label": "Government Response/Policy Action",
+      "content": "Following such incidents, the DGCA typically initiates a detailed investigation to determine the root cause of the technical snag

@@ -456,7 +456,13 @@ async function generateWithGemini(prompt, retries = 3) {
           temperature: 0.1,
           topK: 1,
           topP: 0.8,
-          maxOutputTokens: 2048,
+          // 2048 truncated the large schema mid-string (unterminated JSON).
+          // This content (10 summary points + flowchart + MCQs + mains) needs
+          // far more headroom; env-tunable for future schema growth.
+          maxOutputTokens: Number(process.env.GEMINI_MAX_OUTPUT_TOKENS) || 8192,
+          // Native JSON mode: the model returns strictly valid JSON (no markdown
+          // fences, no prose), which removes a whole class of parse failures.
+          responseMimeType: "application/json",
         },
       });
 

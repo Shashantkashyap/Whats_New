@@ -109,6 +109,74 @@ const SOURCES = [
   },
 ];
 
+/**
+ * RSS / Atom feeds for the default (production) provider.
+ *
+ * Feeds are machine-readable by design: no bot detection, no headless browser,
+ * legal to consume. Two kinds:
+ *   - type "search":  `{query}` in urlTemplate is replaced with the topic, so
+ *                     the feed itself is topic-scoped (Google News search RSS).
+ *   - type "section": a fixed feed of latest items; we topic-filter client-side.
+ *
+ * Adding a source is a data change here, never a code change.
+ */
+const FEEDS = [
+  {
+    id: "google-news",
+    name: "Google News (India)",
+    type: "search",
+    urlTemplate: "https://news.google.com/rss/search?q={query}%20when:2d&hl=en-IN&gl=IN&ceid=IN:en",
+    premium: false,
+  },
+  {
+    id: "the-hindu",
+    name: "The Hindu",
+    type: "section",
+    url: "https://www.thehindu.com/news/national/feeder/default.rss",
+    premium: true,
+  },
+  {
+    id: "indian-express",
+    name: "Indian Express",
+    type: "search",
+    // ponytail: IE's direct WordPress feed 403s from datacenter IPs, so we
+    // scope Google News to its domain. Upgrade path = direct feed when running
+    // from an IP it doesn't block (feed carries fuller <content:encoded>).
+    urlTemplate: "https://news.google.com/rss/search?q=site:indianexpress.com%20{query}%20when:2d&hl=en-IN&gl=IN&ceid=IN:en",
+    premium: true,
+  },
+  {
+    id: "livemint",
+    name: "Livemint",
+    type: "section",
+    url: "https://www.livemint.com/rss/news",
+    premium: true,
+  },
+  {
+    id: "pib",
+    name: "PIB",
+    type: "search",
+    // ponytail: PIB's own RSS is unreliable, so we scope Google News to its
+    // domain. Upgrade path = PIB's official RSS once a stable endpoint exists.
+    urlTemplate: "https://news.google.com/rss/search?q=site:pib.gov.in%20{query}%20when:3d&hl=en-IN&gl=IN&ceid=IN:en",
+    premium: true,
+  },
+];
+
+/** Build a feed URL for a topic (search feeds) or return the fixed url. */
+function buildFeedUrl(feed, topic) {
+  if (feed.urlTemplate) {
+    return feed.urlTemplate.replace("{query}", encodeURIComponent(String(topic || "").trim()));
+  }
+  return feed.url;
+}
+
+/** Look up a feed descriptor by id or display name (case-insensitive). */
+function resolveFeed(idOrName) {
+  const key = String(idOrName || "").trim().toLowerCase();
+  return FEEDS.find((f) => f.id === key || f.name.toLowerCase() === key) || null;
+}
+
 /** Flat set of every host the scraper may visit. */
 const allowedDomains = Array.from(new Set(SOURCES.flatMap((s) => s.domains)));
 
@@ -142,6 +210,25 @@ function isAllowedUrl(rawUrl) {
 const NEWS_CONFIG = {
   sources: SOURCES,
   allowedDomains,
+
+  // Which provider backs the scrape_news tool. "rss" (default) reads machine-
+  // readable feeds and never opens a browser; "chrome-mcp" drives real Chrome
+  // (heavy, blocked by anti-bot on premium sites - keep for local experiments).
+  provider: (process.env.NEWS_PROVIDER || "rss").toLowerCase(),
+
+  // RSS provider settings.
+  rss: {
+    feeds: FEEDS,
+    userAgent:
+      process.env.NEWS_HTTP_USER_AGENT ||
+      "Mozilla/5.0 (compatible; WhatsNewBot/1.0; +https://github.com/whats-new)",
+    // Fetch each article page to enrich thin feed summaries into real bodies.
+    enrichBody: process.env.NEWS_RSS_ENRICH ? process.env.NEWS_RSS_ENRICH !== "false" : true,
+    // Feed summaries are legitimately short, so allow a lower floor than the
+    // browser path (which extracts full article text).
+    minBodyChars: num(process.env.NEWS_RSS_MIN_BODY_CHARS, 140),
+    fetchTimeoutMs: num(process.env.NEWS_RSS_FETCH_TIMEOUT_MS, 12_000),
+  },
 
   // Timeouts (ms)
   browserTimeoutMs: num(process.env.NEWS_BROWSER_TIMEOUT_MS, 60_000),
@@ -185,6 +272,8 @@ const NEWS_CONFIG = {
   buildSearchUrl,
   resolveSource,
   isAllowedUrl,
+  buildFeedUrl,
+  resolveFeed,
 };
 
 module.exports = NEWS_CONFIG;
