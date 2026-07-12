@@ -1,12 +1,11 @@
+require("dotenv").config();
 const express = require("express");
-const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
-const { sequelize } = require("./config/db");
+const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const { authenticateToken } = require("./middleware/auth");
 
-dotenv.config();
 const app = express();
 
 app.use(express.json());
@@ -14,15 +13,14 @@ app.use(cookieParser());
 
 const base = "/api/v1";
 
-// 🔓 Public routes (No token needed)
+// 🔓 Public routes (no token needed)
 app.use(`${base}/auth`, authRoutes);
 
-// 🔒 Protected routes (All need token)
+// 🔒 Protected routes (all need a valid access token)
 app.use(`${base}/users`, authenticateToken, userRoutes);
 
 const PORT = process.env.PORT || 4001;
 
-sequelize.sync().then(() => {
-  console.log("Database connected ✅");
-  app.listen(PORT, () => console.log(`User Service running on port ${PORT}`));
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`🚀 User Service running on port ${PORT}`));
 });

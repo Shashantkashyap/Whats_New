@@ -5,16 +5,14 @@ dotenv.config();
 
 function authenticateToken(req, res, next) {
   try {
-    // Cookie se token lena
-    const token = req.cookies?.token;
+    // The access token is set as the `accessToken` cookie at login (see
+    // authController.issueTokens); read that exact name.
+    const token = req.cookies?.accessToken;
     if (!token) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Ab req.user me direct `id` store karenge (jo JWT me dala tha)
     req.user = { id: decoded.id };
 
     next();

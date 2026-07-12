@@ -74,16 +74,27 @@ inside `mapProviderArticleToNewsItem()`, preserving the scraped `content` body.
 - **Prompt:** `buildGeminiContentPrompt()` embeds the sanitized article body and
   instructs Gemini to base every fact, number, date, and name strictly on that
   text, treating it as data (not instructions) and omitting anything absent from
-  it. The body is capped at `GEMINI_PROMPT_BODY_CHARS` (default 9000).
+  it. The body is capped at `GEMINI_PROMPT_BODY_CHARS` (default 6000).
+- **Structured output:** the output shape is enforced by Gemini's native
+  `responseSchema` (`generationConfig`), not a verbose JSON example baked into
+  the prompt. This is the main token saving — the prompt only carries
+  instructions + the article — and responses are always valid JSON, which
+  removes a whole class of parse-fail retries.
 - **Storage:** the stored `content` field is the ORIGINAL scraped article body
   (the verifiable source of truth). Gemini's output populates only the derived
   fields (`summary`, `why`, `flowchart`, `mcqs`, `mainsQuestion`, ...), so the
   response schema is unchanged.
+- **Concurrency:** items are enriched with bounded concurrency
+  (`GEMINI_CONCURRENCY`, default 2) via `utils/concurrency.mapLimit`, so one slow
+  or failing article never blocks or aborts the batch.
 
 | Env var | Default | Meaning |
 | --- | --- | --- |
-| `GEMINI_PROMPT_BODY_CHARS` | 9000 | Max article chars sent to Gemini for enrichment |
+| `GEMINI_PROMPT_BODY_CHARS` | 6000 | Max article chars sent to Gemini for enrichment |
 | `MIN_ARTICLE_BODY_CHARS` | 80 | Below this, skip the item instead of fabricating |
+| `GEMINI_TEMPERATURE` | 0.3 | Sampling temperature for enrichment |
+| `GEMINI_MAX_OUTPUT_TOKENS` | 4096 | Output token cap per enrichment call |
+| `GEMINI_CONCURRENCY` | 2 | Articles enriched in parallel |
 
 ## Components
 
