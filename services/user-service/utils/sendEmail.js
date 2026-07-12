@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Gmail use karenge
+  service: "gmail", // Gmail use karenge -> to karna bc krta ku ni hain , hm b pareshan hain
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
