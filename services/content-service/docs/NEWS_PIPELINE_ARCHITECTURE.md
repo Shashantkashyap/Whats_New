@@ -58,13 +58,32 @@ fetchTop5News_Prod()  ──►  geminiTools.collectNews()
         structured articles [{title,url,source,publishedAt,author,category,image,content}]
                                  │
                                  ▼
-   generateAndStoreContent()  ── UNCHANGED: relevance, Gemini enrichment,
+   generateAndStoreContent()  ── relevance, GROUNDED Gemini enrichment,
                                   Unsplash images, MCQs, mains, flowcharts, Mongo
 ```
 
-Everything **after** article collection is exactly as before. The provider maps
-its canonical article shape back to the legacy item shape inside
-`mapProviderArticleToNewsItem()` so downstream code is untouched.
+The provider maps its canonical article shape back to the legacy item shape
+inside `mapProviderArticleToNewsItem()`, preserving the scraped `content` body.
+
+### Grounded enrichment (the article is the source of truth)
+
+`generateAndStoreContent()` no longer lets Gemini invent facts from a headline:
+
+- **Guard:** items with no real article body (`< MIN_ARTICLE_BODY_CHARS`) are
+  skipped, not enriched — we never ask Gemini to fabricate from nothing.
+- **Prompt:** `buildGeminiContentPrompt()` embeds the sanitized article body and
+  instructs Gemini to base every fact, number, date, and name strictly on that
+  text, treating it as data (not instructions) and omitting anything absent from
+  it. The body is capped at `GEMINI_PROMPT_BODY_CHARS` (default 9000).
+- **Storage:** the stored `content` field is the ORIGINAL scraped article body
+  (the verifiable source of truth). Gemini's output populates only the derived
+  fields (`summary`, `why`, `flowchart`, `mcqs`, `mainsQuestion`, ...), so the
+  response schema is unchanged.
+
+| Env var | Default | Meaning |
+| --- | --- | --- |
+| `GEMINI_PROMPT_BODY_CHARS` | 9000 | Max article chars sent to Gemini for enrichment |
+| `MIN_ARTICLE_BODY_CHARS` | 80 | Below this, skip the item instead of fabricating |
 
 ## Components
 
