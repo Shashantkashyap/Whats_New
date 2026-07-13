@@ -1,21 +1,26 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
+const mongoose = require("mongoose");
 
-const User = sequelize.define("User", {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  email: { type: DataTypes.STRING, unique: true, allowNull: false },
-  password: { type: DataTypes.STRING, allowNull: false },
-  isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
-  refreshToken: { type: DataTypes.TEXT, allowNull: true }, // NEW FIELD
+const userSchema = new mongoose.Schema(
+  {
+    email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    password: { type: String, required: true },
+    isVerified: { type: Boolean, default: false },
+    // Stored hashed (bcrypt); rotated on every refresh.
+    refreshToken: { type: String, default: null },
 
+    // Optional profile fields
+    firstName: { type: String, trim: true, default: null },
+    lastName: { type: String, trim: true, default: null },
+    // `sparse` so multiple users may leave username unset without colliding on null.
+    username: { type: String, trim: true, unique: true, sparse: true, default: null },
+    bio: { type: String, trim: true, default: null },
+    avatar: { type: String, trim: true, default: null }, // URL
 
-  // Optional profile fields
-  firstName: { type: DataTypes.STRING, allowNull: true },
-  lastName: { type: DataTypes.STRING, allowNull: true },
-  username: { type: DataTypes.STRING, allowNull: true, unique: true },
-  bio: { type: DataTypes.TEXT, allowNull: true },
-  avatar: { type: DataTypes.STRING, allowNull: true }, // URL
-  interests: { type: DataTypes.TEXT, allowNull: true }, // JSON string
-});
+    // Interests are a small, bounded list read/written as a whole — embedding an
+    // array on the user is the natural Mongo model (no separate join table).
+    interests: { type: [String], default: [] },
+  },
+  { timestamps: true }
+);
 
-module.exports = User;
+module.exports = mongoose.model("User", userSchema);

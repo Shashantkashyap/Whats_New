@@ -1,18 +1,16 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
-const User = require("./User");
+const mongoose = require("mongoose");
 
-const Otp = sequelize.define("Otp", {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  code: { type: DataTypes.STRING, allowNull: false },
-  expiresAt: { type: DataTypes.DATE, allowNull: false },
-purpose: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: "signup", // ✅ default rakha
-  },});
+const otpSchema = new mongoose.Schema(
+  {
+    code: { type: String, required: true },
+    // TTL index: Mongo auto-removes the document once `expiresAt` passes, so
+    // stale OTPs clean themselves up. The controllers still verify expiry
+    // explicitly (TTL sweeps run on a ~60s interval, not instantly).
+    expiresAt: { type: Date, required: true, index: { expires: 0 } },
+    purpose: { type: String, required: true, default: "signup" },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: true }
+);
 
-User.hasOne(Otp, { foreignKey: "userId", onDelete: "CASCADE" });
-Otp.belongsTo(User, { foreignKey: "userId" });
-
-module.exports = Otp;
+module.exports = mongoose.model("Otp", otpSchema);

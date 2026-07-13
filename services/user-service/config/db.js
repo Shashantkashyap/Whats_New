@@ -1,33 +1,13 @@
-const { Sequelize } = require("sequelize");
-const dotenv = require("dotenv");
-dotenv.config();
+const mongoose = require("mongoose");
 
-// Backend runtime DB connection
-const sequelize = new Sequelize(
-  process.env.DB_NAME, // Database name
-  process.env.DB_USER, // DB user
-  process.env.DB_PASS, // DB password
-  {
-    host: process.env.DB_HOST, // Railway host
-    port: Number(process.env.DB_PORT), // Railway port
-    dialect: "postgres",
-    logging: false,
-    dialectOptions: {
-      ssl: {
-        require: true, // Railway requires SSL
-        rejectUnauthorized: false,
-      },
-    },
-  }
-);
-
-async function connectDB() {
+const connectDB = async () => {
   try {
-    await sequelize.authenticate();
-    console.log("✅ Connected to Railway Postgres");
-  } catch (err) {
-    console.error("❌ DB connection failed:", err.message);
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ MongoDB connected successfully");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error.message);
+    process.exit(1);
   }
-}
+};
 
-module.exports = { sequelize, connectDB };
+module.exports = connectDB;

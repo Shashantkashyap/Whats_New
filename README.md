@@ -9,8 +9,7 @@
   <img src="https://img.shields.io/badge/Node.js-v18+-339933?logo=node.js&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/Express-v5-000000?logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/PostgreSQL-Sequelize-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Gemini_AI-1.5_Flash-4285F4?logo=google&logoColor=white" alt="Gemini AI" />
+  <img src="https://img.shields.io/badge/Gemini_AI-2.5_Flash-4285F4?logo=google&logoColor=white" alt="Gemini AI" />
   <img src="https://img.shields.io/badge/Architecture-Microservices-FF6F00" alt="Architecture" />
 </p>
 
@@ -40,12 +39,12 @@
 **What's New** is a backend platform purpose-built for **UPSC (Civil Services)** aspirants. It automates the daily grind of news curation by:
 
 1. **Fetching** the top 5 most UPSC-relevant news stories daily from premium Indian sources (The Hindu, Indian Express, PIB, Economic Times, Livemint).
-2. **Enriching** each article with AI-generated UPSC study material — summaries, flowcharts, MCQs, Mains questions, exam relevance tags, and significance analysis — using **Google Gemini 1.5 Flash**.
+2. **Enriching** each article with AI-generated UPSC study material — summaries, flowcharts, MCQs, Mains questions, exam relevance tags, and significance analysis — using **Google Gemini 2.5 Flash** with native structured output.
 3. **Scoring** every article with a smart relevance algorithm based on subject priority, recency, and source credibility.
 4. **Serving** the enriched content through clean REST APIs with filtering, date-based pagination, and full-text search.
 5. **Managing** user accounts with secure JWT authentication, OTP email verification, profile management, and interest-based personalization.
 
-The system follows a **microservices architecture** with independent `content-service` and `user-service`, each with their own database, ensuring separation of concerns and independent scalability.
+The system follows a **microservices architecture** with independent `content-service` and `user-service`, each backed by its own **MongoDB** database, ensuring separation of concerns and independent scalability.
 
 ---
 
@@ -79,7 +78,7 @@ The system follows a **microservices architecture** with independent `content-se
                        │                    │
                        ▼                    ▼
               ┌──────────────────┐ ┌──────────────────┐
-              │    MongoDB       │ │   PostgreSQL     │
+              │    MongoDB       │ │    MongoDB       │
               │  (News Content)  │ │  (Users/Auth)    │
               └──────────────────┘ └──────────────────┘
 ```
@@ -93,15 +92,15 @@ The system follows a **microservices architecture** with independent `content-se
 | **Runtime**        | Node.js (v18+)                                    | JavaScript server runtime                    |
 | **Framework**      | Express.js v5                                     | HTTP server and routing                       |
 | **Content DB**     | MongoDB + Mongoose v8                             | NoSQL storage for news articles               |
-| **User DB**        | PostgreSQL + Sequelize v6                         | Relational storage for users & auth           |
-| **AI Engine**      | Google Gemini 1.5 Flash (`@google/generative-ai`) | Content generation, enrichment, MCQ creation  |
+| **User DB**        | MongoDB + Mongoose v8                             | NoSQL storage for users, OTPs & auth          |
+| **AI Engine**      | Google Gemini 2.5 Flash (`@google/generative-ai`) | Structured content generation & enrichment    |
 | **Image API**      | Unsplash API                                      | Context-relevant article images               |
 | **Auth**           | JWT (Access + Refresh tokens) + bcrypt            | Stateless authentication with token rotation  |
 | **Email**          | Nodemailer (Gmail SMTP)                           | OTP delivery for signup & password reset      |
 | **Scraping**       | Puppeteer + Cheerio                               | Web scraping capabilities (pipeline-ready)    |
 | **HTTP Client**    | Axios                                             | External API requests                         |
 | **Scheduling**     | node-cron                                         | Scheduled pipeline execution (scaffolded)     |
-| **Dev Tools**      | Nodemon, Sequelize CLI                            | Hot-reload server, DB migrations              |
+| **Dev Tools**      | Nodemon                                           | Hot-reload server                             |
 
 ---
 
@@ -122,8 +121,8 @@ Whats_New/
     │   ├── package.json            #    Service-specific dependencies
     │   ├── config/
     │   │   ├── db.js               #    MongoDB connection via Mongoose
-    │   │   ├── gemni.js            #    Google Gemini AI model configuration
-    │   │   └── openai.js           #    OpenAI client configuration (alternative AI)
+    │   │   ├── gemni.js            #    Google Gemini model configuration
+    │   │   └── newsConfig.js       #    Sources, feeds, timeouts, provider selection
     │   ├── controllers/
     │   │   └── newsController.js   #    CRUD operations for News articles
     │   ├── models/
@@ -132,43 +131,32 @@ Whats_New/
     │   │   ├── newsRoutes.js       #    REST routes for /api/v1/news
     │   │   └── contentRoutes.js    #    Pipeline trigger route /api/v1/content
     │   ├── pipeline/
-    │   │   └── contentPipeline.js  #    🧠 Core AI pipeline (1077 lines)
-    │   ├── services/
-    │   │   └── contentService.js   #    Service layer (placeholder)
-    │   ├── cron/
-    │   │   └── cron.js             #    Scheduled tasks (placeholder)
+    │   │   └── contentPipeline.js  #    🧠 Core AI pipeline (fetch → enrich → store)
+    │   ├── providers/              #    Pluggable news providers (RSS default, Chrome MCP)
+    │   ├── services/               #    Scrape, dedup, quality-filter, cache, Gemini tools
     │   ├── utils/
-    │   │   ├── helper.js           #    Utility helpers (placeholder)
-    │   │   ├── tags.js             #    UPSC subject tag definitions
-    │   │   └── unsplash.js         #    Unsplash image fetcher utility
-    │   └── testgemni.js            #    Standalone Gemini API test script
+    │   │   ├── concurrency.js      #    mapLimit + withRetry helpers
+    │   │   ├── logger.js           #    Structured JSON logger
+    │   │   └── rssParser.js        #    Dependency-free RSS/Atom parser
+    │   ├── docs/                   #    Architecture docs
+    │   └── test/                   #    node:test unit suites
     │
     └── user-service/               # 🟢 User Authentication & Profile Microservice
-        ├── index.js                #    Entry point — connects PostgreSQL, starts server
+        ├── index.js                #    Entry point — connects MongoDB, starts server
         ├── package.json            #    Service-specific dependencies
         ├── config/
-        │   ├── config.js           #    Sequelize CLI config (dev/prod environments)
-        │   └── db.js               #    PostgreSQL connection via Sequelize
+        │   └── db.js               #    MongoDB connection via Mongoose
         ├── controllers/
         │   ├── authController.js   #    Register, Login, OTP, Token refresh, Password reset
         │   └── userController.js   #    Profile CRUD, Interest management
         ├── middleware/
-        │   └── auth.js             #    JWT token authentication middleware
+        │   └── auth.js             #    JWT access-token authentication middleware
         ├── models/
-        │   ├── User.js             #    User model (email, password, profile fields)
-        │   ├── Otp.js              #    OTP model with purpose-based tracking
-        │   ├── Interest.js         #    User interest categories
-        │   └── index.js            #    Sequelize model loader
+        │   ├── User.js             #    Mongoose user schema (embeds interests[])
+        │   └── Otp.js              #    Mongoose OTP schema (TTL-indexed, purpose-based)
         ├── routes/
         │   ├── auth.js             #    Public auth routes (/register, /login, etc.)
         │   └── user.js             #    Protected user routes (/me, /interests)
-        ├── migrations/
-        │   ├── 20250823205137-create-users.js
-        │   ├── 20250824121806-add_profile_fields_to_user.js
-        │   ├── 20250825151703-add-purpose-to-otp.js
-        │   └── 20250825170444-add-refresh-token.js
-        ├── seeders/
-        │   └── 20250823205857-demo-user.js
         └── utils/
             ├── response.js         #    Standardized API response helpers
             ├── sendEmail.js        #    Nodemailer email sender (Gmail SMTP)
@@ -225,7 +213,7 @@ The Content Service is the brain of the platform. It handles all news content li
 
 ### 2. User Service
 
-> **Port:** `4001` &nbsp;|&nbsp; **Database:** PostgreSQL (Railway) &nbsp;|&nbsp; **ORM:** Sequelize
+> **Port:** `4001` &nbsp;|&nbsp; **Database:** MongoDB &nbsp;|&nbsp; **ODM:** Mongoose
 
 The User Service handles all authentication, profile management, and user personalization.
 
@@ -379,49 +367,51 @@ The User Service handles all authentication, profile management, and user person
 
 ---
 
-### PostgreSQL — User & OTP Tables (`user-service`)
+### MongoDB — User & OTP Collections (`user-service`)
 
-**Users Table:**
+**User Schema:**
 
-| Column         | Type    | Constraints                            |
-| :------------- | :------ | :------------------------------------- |
-| `id`           | INTEGER | Primary Key, Auto Increment            |
-| `email`        | STRING  | Unique, Not Null                       |
-| `password`     | STRING  | Not Null (bcrypt hashed)               |
-| `isVerified`   | BOOLEAN | Default: `false`                       |
-| `refreshToken` | TEXT    | Nullable (bcrypt hashed)               |
-| `firstName`    | STRING  | Nullable                               |
-| `lastName`     | STRING  | Nullable                               |
-| `username`     | STRING  | Nullable, Unique                       |
-| `bio`          | TEXT    | Nullable                               |
-| `avatar`       | STRING  | Nullable (URL)                         |
-| `interests`    | TEXT    | Nullable (JSON string)                 |
-| `createdAt`    | DATE    | Auto-generated                         |
-| `updatedAt`    | DATE    | Auto-generated                         |
+```javascript
+{
+  email:        String (required, unique, lowercased),
+  password:     String (required, bcrypt hashed),
+  isVerified:   Boolean (default: false),
+  refreshToken: String (nullable, bcrypt hashed, rotated on refresh),
 
-**OTPs Table:**
+  // Optional profile
+  firstName:    String,
+  lastName:     String,
+  username:     String (unique, sparse),
+  bio:          String,
+  avatar:       String,                              // URL
 
-| Column      | Type    | Constraints                                            |
-| :---------- | :------ | :----------------------------------------------------- |
-| `id`        | INTEGER | Primary Key, Auto Increment                            |
-| `code`      | STRING  | Not Null (6-digit OTP)                                 |
-| `expiresAt` | DATE    | Not Null (10 min from creation)                        |
-| `purpose`   | STRING  | Not Null, Default: `"signup"` (also `"forgot_password"`) |
-| `userId`    | INTEGER | Foreign Key → Users (CASCADE delete)                   |
+  interests:    [String] (default: []),             // embedded, no join table
 
-**Interests Table:**
+  createdAt:    Date (auto),
+  updatedAt:    Date (auto)
+}
+```
 
-| Column     | Type    | Constraints                    |
-| :--------- | :------ | :----------------------------- |
-| `id`       | INTEGER | Primary Key, Auto Increment    |
-| `category` | STRING  | Not Null (e.g., "AI", "Polity")|
-| `userId`   | INTEGER | Foreign Key → Users            |
+**OTP Schema:**
+
+```javascript
+{
+  code:      String (required),                      // 6-digit OTP
+  expiresAt: Date (required, TTL index — auto-purged after expiry),
+  purpose:   String (required, default "signup" | "forgot_password"),
+  user:      ObjectId (ref: "User", required),
+  createdAt: Date (auto),
+  updatedAt: Date (auto)
+}
+```
+
+> Interests are embedded on the user document (a small, bounded, read-as-a-whole list), so there is no separate collection. OTPs self-clean via a TTL index on `expiresAt`.
 
 ---
 
 ## 🧠 Content Pipeline Deep Dive
 
-The `contentPipeline.js` is the heart of the platform — a **1077-line** production-ready pipeline that orchestrates the entire content enrichment workflow.
+The `contentPipeline.js` is the heart of the platform — a production-ready pipeline that orchestrates the entire content enrichment workflow. Gemini calls use **native structured output** (`responseSchema`) so responses are always valid JSON, and articles are enriched with **bounded concurrency** rather than a strictly serial loop.
 
 ### Subject Tag Priority System
 
@@ -514,12 +504,8 @@ UNSPLASH_ACCESS_KEY=your_unsplash_access_key
 # Server
 PORT=4001
 
-# PostgreSQL (Railway)
-DB_NAME=your_database_name
-DB_USER=your_database_user
-DB_PASS=your_database_password
-DB_HOST=your_database_host
-DB_PORT=your_database_port
+# MongoDB
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>
 
 # JWT Secrets
 JWT_SECRET=your_jwt_secret_key
@@ -542,8 +528,7 @@ NODE_ENV=development
 ### Prerequisites
 
 - **Node.js** v18 or higher
-- **MongoDB** instance (local or Atlas)
-- **PostgreSQL** instance (local or Railway)
+- **MongoDB** instance (local or Atlas) — used by both services
 - **Google Gemini API Key** — [Get one here](https://aistudio.google.com/app/apikey)
 - **Unsplash API Key** — [Register here](https://unsplash.com/developers)
 
@@ -577,16 +562,9 @@ cp services/content-service/.env.example services/content-service/.env
 cp services/user-service/.env.example services/user-service/.env
 ```
 
-### Run Database Migrations (User Service)
-
-```bash
-# 6. Run Sequelize migrations
-cd services/user-service
-npx sequelize-cli db:migrate
-
-# (Optional) Seed demo user
-npx sequelize-cli db:seed:all
-```
+> **No migrations needed.** Both services use MongoDB; Mongoose creates
+> collections and indexes on first write. Just set `MONGO_URI` in each service's
+> `.env` and start the servers.
 
 ### Start the Services
 
@@ -633,13 +611,6 @@ npm run dev
 # Content Service (manual restart needed)
 cd services/content-service
 node index.js
-```
-
-### Creating New Migrations
-
-```bash
-cd services/user-service
-npx sequelize-cli migration:generate --name add-new-field
 ```
 
 ### Testing the Content Pipeline
