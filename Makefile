@@ -8,7 +8,7 @@ USER    := services/user-service
 .DEFAULT_GOAL := help
 
 .PHONY: help install install-content install-user \
-        run run-content run-user test smoke-connect smoke-scrape \
+        run run-content run-user build serve start test smoke-connect smoke-scrape \
         env set-gemini set-mongo set-unsplash check-env
 
 help: ## Show available targets
@@ -40,6 +40,17 @@ run-content: check-env ## Run only the content-service (:5050)
 
 run-user: ## Run only the user-service (:4001)
 	cd $(USER) && npm run dev
+
+# ---------------------------------------------------------------- build / ship
+build: ## Bundle the whole backend into one file: dist/whatsnew-backend.cjs
+	npm install
+	npm run build
+
+serve: ## Run the built bundle (needs ./.env). Build first with `make build`.
+	node dist/whatsnew-backend.cjs
+
+start: ## Run the composed backend from source (both services, one port)
+	node server.js
 
 # ---------------------------------------------------------------- test
 test: ## Run content-service unit tests (node --test)

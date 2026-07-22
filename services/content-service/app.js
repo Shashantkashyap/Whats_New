@@ -3,6 +3,7 @@ const cors = require("cors");
 
 const newsRoutes = require("./routes/newsRoutes");
 const contentRoutes = require("./routes/contentRoutes");
+const topicsRoutes = require("./routes/topicsRoutes");
 
 const app = express();
 
@@ -13,5 +14,6 @@ app.use(express.json());
 // Routes
 app.use("/api/v1/news", newsRoutes);
 app.use("/api/v1/content", contentRoutes);
+app.use("/api/v1/topics", topicsRoutes);
 
 module.exports = app;

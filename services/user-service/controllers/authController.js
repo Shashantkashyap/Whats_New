@@ -1,8 +1,9 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 const { sendEmail } = require("../utils/sendEmail");
-const { successResponse, errorResponse } = require("../utils/response");
+const { successResponse, errorResponse, apiOk, apiErr } = require("../utils/response");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -91,21 +92,41 @@ async function verifyOtp(req, res) {
   }
 }
 
+// Executive metadata block returned to the front-end at login.
+function executiveProfile(user) {
+  return {
+    id: user.id,
+    name: user.name || [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
+    designation: user.designation || null,
+    department: user.department || null,
+    cadre: user.cadre || null,
+    tier: user.tier || null,
+    interests: user.interests || [],
+  };
+}
+
 // ---------------- Login ----------------
+// Spec-compliant: returns the session token + executive metadata in the body
+// (cookies are still set for the cookie-based flows). Invalid email OR password
+// collapse to a single AUTH_INVALID_CREDENTIALS code (also avoids enumeration).
 async function login(req, res) {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return errorResponse(res, "User not found", 404);
-    if (!user.isVerified) return errorResponse(res, "Please verify account", 403);
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return apiErr(res, "AUTH_INVALID_CREDENTIALS", "The credentials provided do not match our diplomatic registry.", 401);
+    }
+    if (!user.isVerified) {
+      return apiErr(res, "AUTH_ACCOUNT_UNVERIFIED", "Please verify your account before signing in.", 403);
+    }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return errorResponse(res, "Invalid password", 401);
+    const { accessToken } = await issueTokens(res, user);
+    const decoded = jwt.decode(accessToken);
+    const expires_at = decoded && decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null;
 
-    const tokens = await issueTokens(res, user);
-    return successResponse(res, { id: user.id, email: user.email, ...tokens }, "Logged in successfully");
+    return apiOk(res, { token: accessToken, expires_at, user: executiveProfile(user) });
   } catch (err) {
-    return errorResponse(res, err.message, 400);
+    return apiErr(res, "AUTH_LOGIN_FAILED", err.message, 500);
   }
 }
 

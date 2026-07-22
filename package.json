@@ -1,9 +1,21 @@
 {
+  "name": "whats-new-backend",
+  "version": "1.0.0",
+  "description": "UPSC Executive Intelligence backend — user-service + content-service composed into one runnable artifact.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node build.js",
+    "serve": "node dist/whatsnew-backend.cjs"
+  },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "mongoose": "^8.18.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   }
 }

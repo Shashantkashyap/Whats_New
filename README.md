@@ -279,9 +279,12 @@ The User Service handles all authentication, profile management, and user person
 | :--------- | :----- | :------ | :------------------------------------------------ |
 | `page`     | number | `1`     | Date-based page (1=today, 2=yesterday, etc.)       |
 | `limit`    | number | `20`    | Max articles per page                               |
-| `category` | string | —       | Comma-separated categories (e.g., `Polity,Economy`) |
-| `source`   | string | —       | Filter by source name                               |
-| `keywords` | string | —       | Search in title, content, and description            |
+| `category`  | string | —       | Comma-separated categories (e.g., `Polity,Economy`) |
+| `source`    | string | —       | Filter by source name                               |
+| `keywords`  | string | —       | Search in title, content, and description            |
+| `minRating` | number | —       | Only return articles with `rating >= minRating` (aspirant view) |
+
+> Results are sorted by `rating` (Gemini exam-value score, highest first), then `relevanceScore`, then recency.
 
 #### Content Pipeline Endpoints (`/content`)
 
@@ -355,7 +358,9 @@ The User Service handles all authentication, profile management, and user person
   // 🏷️ Classification
   tags:            [String],                         // Subject tags
   categories:      [String],                         // e.g., ["UPSC", "Current Affairs"]
-  relevanceScore:  Number (0-10),                    // Smart relevance score
+  relevanceScore:  Number (0-10),                    // Heuristic score (tags/recency/source)
+  rating:          Number (0-10),                    // Gemini UPSC exam-value score (0 = unrated)
+  ratingRationale: String,                           // One-line justification for the rating
 
   // Timestamps
   createdAt:       Date (auto),
@@ -363,7 +368,9 @@ The User Service handles all authentication, profile management, and user person
 }
 ```
 
-**Indexes:** `{ relevanceScore: -1, publishedAt: -1 }`, `{ categories: 1 }`, `{ source: 1 }`, Text index on `title + content + description`
+**Indexes:** `{ rating: -1, publishedAt: -1 }`, `{ relevanceScore: -1, publishedAt: -1 }`, `{ categories: 1 }`, `{ source: 1 }`, Text index on `title + content + description`
+
+**`rating` vs `relevanceScore`:** `relevanceScore` is a cheap heuristic (tags + recency + premium source); `rating` is Gemini's 1-10 judgement of exam value from the article body, weighing **exam-relevance (~50%)**, **factual depth (~30%)**, and **current-affairs weightage (~20%)** — bands: 8-10 high-yield, 5-7 useful, 1-4 tangential. `GET /api/v1/news` sorts by `rating` first and accepts `?minRating=<n>` to filter the aspirant view. See [`docs/NEWS_PIPELINE_ARCHITECTURE.md`](services/content-service/docs/NEWS_PIPELINE_ARCHITECTURE.md#content-rating-exam-value-score-1-10).
 
 ---
 

@@ -20,7 +20,7 @@ exports.createNews = async (req, res) => {
 // ================= READ ALL (with filters + date pagination) =================
 exports.getAllNews = async (req, res) => {
   try {
-    let { page = 1, category, source, keywords, limit = 20 } = req.query;
+    let { page = 1, category, source, keywords, limit = 20, minRating } = req.query;
     page = parseInt(page, 10);
     limit = parseInt(limit, 10);
 
@@ -37,6 +37,10 @@ exports.getAllNews = async (req, res) => {
 
     if (category) filter.categories = { $in: category.split(",") };
     if (source) filter.source = source;
+    // Aspirant view: only surface content at/above a minimum exam-value rating.
+    if (minRating !== undefined && minRating !== "" && !isNaN(minRating)) {
+      filter.rating = { $gte: parseInt(minRating, 10) };
+    }
     if (keywords) {
       filter.$or = [
         { title: { $regex: keywords, $options: "i" } },
@@ -45,8 +49,10 @@ exports.getAllNews = async (req, res) => {
       ];
     }
 
+    // Highest exam-value rating first (aspirant view); relevanceScore and
+    // recency break ties, so unrated/legacy content still ranks sensibly.
     const newsList = await News.find(filter)
-      .sort({ relevanceScore: -1, publishedAt: -1 })
+      .sort({ rating: -1, relevanceScore: -1, publishedAt: -1 })
       .limit(limit);
 
     res.status(200).json({
