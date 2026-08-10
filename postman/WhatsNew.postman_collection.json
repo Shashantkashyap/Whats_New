@@ -1,0 +1,871 @@
+{
+  "info": {
+    "name": "What's New — UPSC News Intelligence API",
+    "_postman_id": "b1e7c9a2-7c1a-4d3e-9a44-whatsnew0001",
+    "description": "Backend API for the What's New UPSC platform (user-service + content-service).\n\nRun the composed backend (`node server.js` / built bundle) so everything is served on one port (`{{baseUrl}}`). It listens on the `.env` PORT (currently **6973**; `{{baseUrl}}` is set to match). To hit the services individually instead, point `{{baseUrl}}` at the user-service (:4001) or content-service (:5050).\n\n**Interactive API docs (Swagger UI):** {{baseUrl}}/docs — raw spec at {{baseUrl}}/openapi.json.\n\nAuth: call **Auth → Login** first — its test script captures `data.token` into the `{{token}}` collection variable, which the content-service bearer-auth endpoints (tests, saved news, swipe, questions) use via the `Authorization: Bearer` header. The user-service protected routes rely on the `accessToken` cookie set by the same login.\n\n**The Daily News Feed (and dashboard reads) are PUBLIC** — no token needed; a token only personalizes them. Test/practice/saved/swipe features require auth.\n\nCovers: the test engine (Prelims MCQ grading + Mains AI evaluation, subject/topic/mixed modes), content prioritization (is_priority on news & topics), the is_subscription flag, public Daily News Feed, saved news, date filtering, the fixed tag filter, swipe personalization, and the subject-wise question bank.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:6973" },
+    { "key": "token", "value": "" },
+    { "key": "newsId", "value": "" },
+    { "key": "imageDocumentId", "value": "" },
+    { "key": "questionId", "value": "" },
+    { "key": "testId", "value": "" },
+    { "key": "mainsTestId", "value": "" },
+    { "key": "email", "value": "aspirant@example.com" },
+    { "key": "password", "value": "Passw0rd!" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "Auth (user-service)",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"name\": \"Test Aspirant\",\n  \"designation\": \"Deputy Secretary\",\n  \"department\": \"Ministry of Finance\",\n  \"interests\": [\"Economy\", \"Polity\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] },
+            "description": "Creates an unverified user and emails an OTP. email + password required; all other profile fields optional."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"123456\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/verify-otp", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "verify-otp"] },
+            "description": "Verifies the signup OTP and logs the user in (issues tokens + cookies)."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Capture the bearer token for content-service endpoints.",
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  console.log('Saved token to {{token}}');",
+                  "}",
+                  "pm.test('login ok', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] },
+            "description": "Returns { token, expires_at, user } and sets accessToken/refreshToken cookies. The user object now includes **is_subscription** (true = paying UPSC subscriber/student, false = general reader). The test script stores token into {{token}}."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh-token"] },
+            "description": "Rotates tokens using the refreshToken cookie."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassw0rd!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "reset-password"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (user-service)",
+      "description": "Protected by the accessToken cookie set at login.",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/users/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "me"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Name\",\n  \"bio\": \"UPSC aspirant\",\n  \"interests\": [\"Economy\", \"International Relations\"],\n  \"is_subscription\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/users/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "me"] },
+            "description": "is_subscription toggles the paying-subscriber flag (set by billing in production; editable here for testing student-gated features)."
+          }
+        },
+        {
+          "name": "Get Interests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/users/interests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "interests"] }
+          }
+        },
+        {
+          "name": "Update Interests",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"interests\": [\"Polity\", \"Economy\", \"Environment\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/users/interests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "users", "interests"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard — Topics & Feed (content-service)",
+      "description": "Bearer-auth endpoints for the news dashboard. Run Login first.",
+      "item": [
+        {
+          "name": "Get Curriculum Tags (personalized)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/topics/tags", "host": ["{{baseUrl}}"], "path": ["api", "v1", "topics", "tags"] },
+            "description": "PUBLIC (token optional). Home-page curriculum tags with live active_dossiers_count (counted against News.tags). Each tag carries is_priority; ordering is 'All' first, then exam-critical (is_priority) topics, then the caller's swipe affinity."
+          }
+        },
+        {
+          "name": "Daily News Feed — default (PUBLIC)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "description": "OPTIONAL — feed is public. A token only personalizes ordering + is_bookmarked." }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/feed?page=1&limit=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "feed"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "15" }
+              ]
+            },
+            "description": "The Daily News Feed is publicly accessible — no login required (try it with the Authorization header removed). High-priority (is_priority) news is surfaced first; each item carries is_priority and is_bookmarked."
+          }
+        },
+        {
+          "name": "Daily News Feed — high priority only (PUBLIC)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/feed?priority=true&all=true&limit=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "feed"],
+              "query": [
+                { "key": "priority", "value": "true", "description": "only exam-critical high-priority news" },
+                { "key": "all", "value": "true" },
+                { "key": "limit", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "News Feed — filter by tag (FIXED)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/feed?tag=economy&limit=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "feed"],
+              "query": [
+                { "key": "tag", "value": "economy", "description": "one of: all | polity | economy | relations | technology | ethics" },
+                { "key": "limit", "value": "15" }
+              ]
+            },
+            "description": "The tag filter now matches against News.tags (previously it matched News.categories, which were identical across all docs, so filtering returned nothing)."
+          }
+        },
+        {
+          "name": "News Feed — search query",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/feed?query=budget&limit=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "feed"],
+              "query": [
+                { "key": "query", "value": "budget" },
+                { "key": "limit", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "News Feed — filter by date",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/feed?date=2026-07-24&limit=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "feed"],
+              "query": [
+                { "key": "date", "value": "2026-07-24", "description": "YYYY-MM-DD single day" },
+                { "key": "limit", "value": "15" }
+              ]
+            },
+            "description": "Date-wise filtering. Also supports ?from=YYYY-MM-DD&to=YYYY-MM-DD (inclusive range) and ?all=true (no date restriction)."
+          }
+        },
+        {
+          "name": "News Feed — date range",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/feed?from=2026-07-01&to=2026-07-24",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "feed"],
+              "query": [
+                { "key": "from", "value": "2026-07-01" },
+                { "key": "to", "value": "2026-07-24" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Swipe Decks (prefers today)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const first = json && json.data && json.data.feed && json.data.feed[0];",
+                  "if (first && first.id) { pm.collectionVariables.set('newsId', first.id); console.log('Saved newsId', first.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/swipe-decks", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "swipe-decks"] },
+            "description": "Swipeable deck. Same response shape as Daily News Feed (`data.feed[]` with feed items). Prefers TODAY's news by default (backfills with recent when today is thin), **hides cards this user already swiped** (send the same Bearer token used on Record Swipe), and ranks by swipe affinity. Override with ?date=YYYY-MM-DD or ?all=true. metadata.swiped_excluded shows how many cards were filtered. Test script stores the first card id into {{newsId}}."
+          }
+        },
+        {
+          "name": "Brief Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json && json.data && json.data.image_document_id;",
+                  "if (id) pm.collectionVariables.set('imageDocumentId', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/briefs/{{newsId}}/details", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "briefs", "{{newsId}}", "details"] },
+            "description": "Full dossier. Images are exposed as image_document_id (never a storage URL) — fetch bytes via Media → Get Media Bytes."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "description": "News/challenge image byte proxy + async mains OCR (no S3 for answer photos). Upload a photo per question, poll ocr-status until done, then submit answer_text via Tests → Upload Written Answers.",
+      "item": [
+        {
+          "name": "Upload Answer Photo (async OCR)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "Handwritten / typed answer photo (JPEG/PNG). Select a local file in Postman."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/media/upload/{{mainsTestId}}/{{questionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "media", "upload", "{{mainsTestId}}", "{{questionId}}"]
+            },
+            "description": "Starts async OCR for one mains question. Image is NOT stored on S3. Returns 202 { status: in_progress }. Poll OCR Status next."
+          }
+        },
+        {
+          "name": "OCR Status (poll)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testId\": \"{{mainsTestId}}\",\n  \"questionIds\": [\"{{questionId}}\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/media/ocr-status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "media", "ocr-status"] },
+            "description": "Poll until data.status is done. Per-question status: not_started | in_progress | done (answer_text) | failed (error). Client should keep pulling while in_progress."
+          }
+        },
+        {
+          "name": "Get Media Bytes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/media/{{imageDocumentId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "media", "{{imageDocumentId}}"] },
+            "description": "Streams image bytes for an image_document_id from the feed/brief. Public; no auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Challenge",
+      "description": "Stateful prelims MCQ + mains handwritten-sheet progress for a news dossier. Auth required. Prefer Answer Single MCQ as the user answers each question; Submit Prelims MCQ finalizes the full set. Mains upload is AI-vision validated; response returns answer_sheet_document_id (not a storage URL).",
+      "item": [
+        {
+          "name": "Challenge Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/challenge/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "challenge", "status"] }
+          }
+        },
+        {
+          "name": "Answer Single MCQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"question_index\": 0,\n  \"selected\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/challenge/answer-mcq", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "challenge", "answer-mcq"] },
+            "description": "Persist one MCQ answer immediately. question_index is 0-based; selected is option index or option text. Returns that question's graded result + answered_count. Auto-completes when all MCQs are answered. Feed challenge.answered_count updates on next feed fetch."
+          }
+        },
+        {
+          "name": "Submit Prelims MCQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"selected_answers\": {\n    \"0\": 2,\n    \"1\": 0,\n    \"2\": 1,\n    \"3\": 3,\n    \"4\": 0\n  }\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/challenge/submit-mcq", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "challenge", "submit-mcq"] },
+            "description": "Bulk finalize. Send selected_answers (question index → option index or option text), or omit body to grade answers already saved via Answer Single MCQ. Server grades against News.mcqs and returns prelims_score + results. Client-supplied score is ignored."
+          }
+        },
+        {
+          "name": "Submit Mains Answer Sheet",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": "", "description": "Photo of handwritten A4 answer sheet" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/mains/submit", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "mains", "submit"] },
+            "description": "multipart field `image`. Rejects non-answer-sheet photos with 422 INVALID_ANSWER_SHEET_FORMAT. On success returns answer_sheet_document_id — fetch bytes via GET /api/v1/media/:id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Swipe Tracking (personalization)",
+      "description": "Records left/right swipes and derives per-tag affinity used to personalize the feed, swipe decks, and tag ordering.",
+      "item": [
+        {
+          "name": "Record Swipe (right = interested)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"direction\": \"right\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/swipe", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "swipe"] },
+            "description": "direction is 'left' or 'right'. Idempotent per (user, card): re-swiping updates the stored direction. The card's tags are snapshotted for a stable affinity signal."
+          }
+        },
+        {
+          "name": "Record Swipe (alt: body newsId)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"newsId\": \"{{newsId}}\",\n  \"direction\": \"left\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/news/swipe", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "swipe"] }
+          }
+        },
+        {
+          "name": "Get Swipe Affinity",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/swipe/affinity", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "swipe", "affinity"] },
+            "description": "The user's current per-tag affinity (right +1, left -1), strongest first."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Question Bank (subject-wise)",
+      "description": "Subject-wise practice/test question bank. Populate it from stored news MCQs via `make harvest-questions`, or bulk-import scraped questions via POST.",
+      "item": [
+        {
+          "name": "List Subjects (+ counts)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/questions/subjects", "host": ["{{baseUrl}}"], "path": ["api", "v1", "questions", "subjects"] },
+            "description": "Every taxonomy subject with its topic_count and live question_count."
+          }
+        },
+        {
+          "name": "Practice Set (random by subject)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/questions/practice?subject=Economy&count=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "questions", "practice"],
+              "query": [
+                { "key": "subject", "value": "Economy" },
+                { "key": "count", "value": "10" },
+                { "key": "reset", "value": "false", "disabled": true }
+              ]
+            },
+            "description": "Random no-repeat batch for this user+filter. Includes answer + explanation. Prefer unseen questions; fills from previously served when pool is short. Pass reset=true to clear the cursor."
+          }
+        },
+        {
+          "name": "List Questions (filter)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/questions?topic_id={{topicId}}&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "questions"],
+              "query": [
+                { "key": "topic_id", "value": "{{topicId}}" },
+                { "key": "limit", "value": "10" },
+                { "key": "reset", "value": "false", "disabled": true }
+              ]
+            },
+            "description": "Same no-repeat random sampling as practice (separate cursor). Includes answer + explanation."
+          }
+        },
+        {
+          "name": "Create / Bulk Import Questions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"questions\": [\n    {\n      \"type\": \"prelims\",\n      \"question\": \"Which article of the Constitution deals with the Right to Constitutional Remedies?\",\n      \"options\": [\"Article 19\", \"Article 32\", \"Article 21\", \"Article 14\"],\n      \"answer\": \"Article 32\",\n      \"explanation\": \"Dr. Ambedkar called Article 32 the heart and soul of the Constitution.\",\n      \"subject\": \"Polity & Governance\",\n      \"topic\": \"Fundamental Rights - Right to Constitutional Remedies & Writs\",\n      \"tags\": [\"Polity\"],\n      \"difficulty\": \"easy\"\n    },\n    {\n      \"type\": \"prelims\",\n      \"question\": \"Repo rate is decided by which body?\",\n      \"options\": [\"SEBI\", \"Finance Ministry\", \"RBI (MPC)\", \"NITI Aayog\"],\n      \"answer\": \"RBI (MPC)\",\n      \"tags\": [\"Economy\"]\n    },\n    {\n      \"type\": \"mains\",\n      \"question\": \"Critically examine the role of cooperative federalism in India's fiscal architecture.\",\n      \"hints\": [\"GST Council\", \"Finance Commission\", \"cesses & surcharges\"],\n      \"modelAnswer\": \"Cooperative federalism balances centre-state fiscal relations via the GST Council and Finance Commission...\",\n      \"subject\": \"Polity & Governance\",\n      \"topic\": \"Federalism\",\n      \"tags\": [\"Polity\"],\n      \"maxMarks\": 15\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/questions", "host": ["{{baseUrl}}"], "path": ["api", "v1", "questions"] },
+            "description": "Accepts a single question object or { questions: [...] } for bulk import. type is 'prelims' (needs options+answer+explanation) or 'mains' (descriptive; hints + optional modelAnswer + maxMarks, no answer). Invalid rows are reported; duplicates (same subject+type+question) are skipped. subject is derived from tags when omitted."
+          }
+        },
+        {
+          "name": "Get Question By Id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/questions/{{questionId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "questions", "{{questionId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "News CRUD (content-service)",
+      "item": [
+        {
+          "name": "Create News",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Sample UPSC News\",\n  \"description\": \"Why this matters\",\n  \"content\": \"Full scraped article body used as the source of truth.\",\n  \"source\": \"The Hindu\",\n  \"tags\": [\"Polity\", \"Governance\"],\n  \"categories\": [\"UPSC\", \"Current Affairs\"],\n  \"summary\": [\"point 1\", \"point 2\"],\n  \"is_priority\": true,\n  \"mcqs\": [{\n    \"question\": \"Sample?\",\n    \"options\": [\"A\", \"B\", \"C\", \"D\"],\n    \"answer\": \"A\"\n  }]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/news", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news"] },
+            "description": "is_priority (bool) marks high-priority daily news that is surfaced first in the feed/decks/list."
+          }
+        },
+        {
+          "name": "List News (date filter)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news?page=1&limit=20&all=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "all", "value": "true", "description": "no date restriction; omit to default to today, or use date / from & to" },
+                { "key": "date", "value": "2026-07-24", "disabled": true },
+                { "key": "from", "value": "2026-07-01", "disabled": true },
+                { "key": "to", "value": "2026-07-24", "disabled": true },
+                { "key": "category", "value": "", "disabled": true },
+                { "key": "minRating", "value": "6", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get News By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}"] }
+          }
+        },
+        {
+          "name": "Update News",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"relevanceScore\": 9,\n  \"is_priority\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}"] },
+            "description": "Set is_priority to flag/unflag high-priority daily news."
+          }
+        },
+        {
+          "name": "Delete News",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saved News (student — auth required)",
+      "description": "User-specific bookmarks. Save/unsave a news item and list all saved news. Run Login and grab a {{newsId}} (e.g. from Swipe Decks) first.",
+      "item": [
+        {
+          "name": "Save News",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/save", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "save"] },
+            "description": "Bookmarks the news item for the logged-in user. Idempotent (saving twice is a no-op)."
+          }
+        },
+        {
+          "name": "Get Saved News",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/news/saved?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "news", "saved"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "All news the user has saved, newest-saved first, as feed items (is_bookmarked=true)."
+          }
+        },
+        {
+          "name": "Unsave News",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/news/{{newsId}}/save", "host": ["{{baseUrl}}"], "path": ["api", "v1", "news", "{{newsId}}", "save"] },
+            "description": "Removes the bookmark."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Engine — Prelims (MCQ)",
+      "description": "Prelims flow: create a test (subject_wise | topic_wise | mixed), display MCQs (no answers leaked), then submit selected options to get per-question correct answer + solution + score. Auth required. Seed prelims questions via the Question Bank first.",
+      "item": [
+        {
+          "name": "Create Prelims Test (subject_wise)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j && j.data && j.data.id) { pm.collectionVariables.set('testId', j.data.id); console.log('Saved testId', j.data.id); }",
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"examType\": \"prelims\",\n  \"mode\": \"subject_wise\",\n  \"subject\": \"Economy\",\n  \"count\": 10\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests"] },
+            "description": "mode = subject_wise (needs subject) | topic_wise (needs topic) | mixed (whole bank). Response returns display questions with options only — no correct_answer/explanation. Stores {{testId}}."
+          }
+        },
+        {
+          "name": "Create Prelims Test (topic_wise)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"examType\": \"prelims\",\n  \"mode\": \"topic_wise\",\n  \"topic\": \"Monetary Policy\",\n  \"count\": 10\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests"] }
+          }
+        },
+        {
+          "name": "Create Prelims Test (mixed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"examType\": \"prelims\",\n  \"mode\": \"mixed\",\n  \"count\": 15\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests"] }
+          }
+        },
+        {
+          "name": "Get Test (display view)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/tests/{{testId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests", "{{testId}}"] },
+            "description": "Pre-submission view (options only). Once evaluated, returns the full results (answers + explanations)."
+          }
+        },
+        {
+          "name": "Submit Prelims (get answers + solutions)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"answers\": [\n    { \"questionId\": \"<paste a question_id from Get Test>\", \"selectedOption\": \"RBI (MPC)\" }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests/{{testId}}/submit", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests", "{{testId}}", "submit"] },
+            "description": "Grades the attempt. Response returns per-question your_answer, correct_answer, is_correct, explanation, plus score / max_score."
+          }
+        },
+        {
+          "name": "List My Tests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/tests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Engine — Mains (descriptive + AI)",
+      "description": "Mains flow: create a test (hints shown, no model answer), upload written answers, then run AI evaluation for marks, feedback, and improvement suggestions. Auth required. Seed mains questions (type=mains) via the Question Bank first.",
+      "item": [
+        {
+          "name": "Create Mains Test (subject_wise)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j && j.data && j.data.id) { pm.collectionVariables.set('mainsTestId', j.data.id); console.log('Saved mainsTestId', j.data.id); }",
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"examType\": \"mains\",\n  \"mode\": \"subject_wise\",\n  \"subject\": \"Polity & Governance\",\n  \"count\": 3\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests"] },
+            "description": "Returns descriptive questions with hints only (model answer stays hidden). Stores {{mainsTestId}}. Also supports mode topic_wise / mixed."
+          }
+        },
+        {
+          "name": "Get Mains Test (hints only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const q = j && j.data && j.data.questions && j.data.questions[0];",
+                  "const id = q && (q.question_id || q.id);",
+                  "if (id) { pm.collectionVariables.set('questionId', id); console.log('Saved questionId', id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/tests/{{mainsTestId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests", "{{mainsTestId}}"] }
+          }
+        },
+        {
+          "name": "Upload Written Answers",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"answers\": [\n    { \"questionId\": \"{{questionId}}\", \"answerText\": \"Cooperative federalism balances centre-state fiscal relations through the GST Council and Finance Commission, though cesses and surcharges outside the divisible pool create friction...\" }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests/{{mainsTestId}}/answers", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests", "{{mainsTestId}}", "answers"] },
+            "description": "Persists typed answers (or OCR answer_text from Media → OCR Status). Accepts { answers: [...] } or a single { questionId, answerText }."
+          }
+        },
+        {
+          "name": "Evaluate (AI marks + feedback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tests/{{mainsTestId}}/evaluate", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tests", "{{mainsTestId}}", "evaluate"] },
+            "description": "Runs AI evaluation (Gemini, with an offline heuristic fallback) on the uploaded answers. Returns per-question marks, feedback, and improvements, plus total score / max_score. Answers can also be passed inline here as { answers: [{ questionId, answerText }] }."
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Docs (Swagger)",
+      "item": [
+        {
+          "name": "Swagger UI (open in browser)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/docs", "host": ["{{baseUrl}}"], "path": ["docs"] },
+            "description": "Interactive Swagger UI for every endpoint. Open {{baseUrl}}/docs in a browser."
+          }
+        },
+        {
+          "name": "OpenAPI Spec (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/openapi.json", "host": ["{{baseUrl}}"], "path": ["openapi.json"] },
+            "description": "The raw OpenAPI 3.0 spec powering the Swagger UI."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content Pipeline (content-service)",
+      "item": [
+        {
+          "name": "Trigger Fetch Now",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/content/fetch-now?mode=dev",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "content", "fetch-now"],
+              "query": [{ "key": "mode", "value": "dev", "description": "dev (sample data) or prod (real scrape + Gemini)" }]
+            },
+            "description": "Kicks off the scrape + Gemini enrichment pipeline in the background (returns 202 immediately)."
+          }
+        },
+        {
+          "name": "Scheduler Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/content/schedulers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "content", "schedulers"]
+            },
+            "description": "In-process cron jobs: last run, status, next_run_at, equivalent_endpoint (content) / invokes (question bank)."
+          }
+        }
+      ]
+    }
+  ]
+}

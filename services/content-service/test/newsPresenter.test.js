@@ -76,6 +76,39 @@ test("toFeedItem maps position, icon, priority and synopsis", () => {
   assert.equal(item.updated_at_label, "12h ago");
   assert.equal(item.synopsis, "SC struck down the scheme.");
   assert.equal(item.is_bookmarked, false);
+  assert.equal(item.challenge.attempted, false);
+  assert.equal(item.challenge.answered_count, 0);
+});
+
+test("toFeedItem attaches per-user challenge progress", () => {
+  const item = toFeedItem(
+    { ...sampleDoc, mcqs: [{}, {}, {}] },
+    1,
+    {
+      challenge: {
+        attempted: true,
+        completed: false,
+        answered_count: 1,
+        total_questions: 3,
+        selected_answers: { "0": 2 },
+        prelims_score: null,
+        mains_submitted: false,
+      },
+    }
+  );
+  assert.equal(item.challenge.attempted, true);
+  assert.equal(item.challenge.answered_count, 1);
+  assert.deepEqual(item.challenge.selected_answers, { "0": 2 });
+});
+
+test("image_document_id is exposed; private URLs are never returned", () => {
+  const withImg = toFeedItem({ ...sampleDoc, imageDocumentId: "507f1f77bcf86cd799439011", imageUrl: "https://secret/x.jpg" }, 1);
+  assert.equal(withImg.image_document_id, "507f1f77bcf86cd799439011");
+  assert.equal(withImg.image_url, undefined);
+  const noImg = toFeedItem(sampleDoc, 1);
+  assert.equal(noImg.image_document_id, null);
+  assert.equal(toDeck({ ...sampleDoc, imageDocumentId: "507f1f77bcf86cd799439012" }).image_document_id, "507f1f77bcf86cd799439012");
+  assert.equal(toBriefDetail({ ...sampleDoc, imageDocumentId: "507f1f77bcf86cd799439013" }).image_document_id, "507f1f77bcf86cd799439013");
 });
 
 test("toDeck builds slides from flowchartNodes; null when empty", () => {
@@ -95,6 +128,17 @@ test("toBriefDetail exposes pillars, mains question, references and telemetry", 
   assert.deepEqual(d.noted_references, ["RPA 1951"]);
   assert.equal(d.telemetry.author, "Dr. Arvinder Singh");
   assert.equal(d.telemetry.complexity_rating, "Advanced");
+});
+
+test("toBriefDetail exposes prelims_mcqs without answers", () => {
+  const d = toBriefDetail({
+    ...sampleDoc,
+    mcqs: [{ question: "Q?", options: ["A", "B"], answer: "B" }],
+  });
+  assert.equal(d.prelims_mcqs.length, 1);
+  assert.equal(d.prelims_mcqs[0].question, "Q?");
+  assert.equal(d.prelims_mcqs[0].answer, undefined);
+  assert.deepEqual(d.prelims_mcqs[0].options, ["A", "B"]);
 });
 
 test("presenters fall back to summary bullets when no flowchartNodes", () => {

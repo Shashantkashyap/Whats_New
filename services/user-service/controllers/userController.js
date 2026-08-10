@@ -9,9 +9,15 @@ function publicProfile(user) {
     firstName: user.firstName || null,
     lastName: user.lastName || null,
     username: user.username || null,
+    name: user.name || null,
     bio: user.bio || null,
     avatar: user.avatar || null,
+    designation: user.designation || null,
+    department: user.department || null,
+    cadre: user.cadre || null,
+    tier: user.tier || null,
     interests: user.interests || [],
+    is_subscription: !!user.is_subscription,
   };
 }
 
@@ -26,10 +32,16 @@ async function getProfile(req, res) {
   }
 }
 
+// Plain profile fields that support partial updates (no uniqueness constraint).
+const EDITABLE_FIELDS = [
+  "firstName", "lastName", "name",
+  "bio", "avatar", "designation", "department", "cadre", "tier",
+];
+
 // Update profile (partial updates supported)
 async function updateProfile(req, res) {
   try {
-    const { email, firstName, lastName, username, bio, avatar } = req.body;
+    const { email, username } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return errorResponse(res, "User not found", 404);
 
@@ -45,10 +57,13 @@ async function updateProfile(req, res) {
       user.username = username;
     }
 
-    if (firstName !== undefined) user.firstName = firstName;
-    if (lastName !== undefined) user.lastName = lastName;
-    if (bio !== undefined) user.bio = bio;
-    if (avatar !== undefined) user.avatar = avatar;
+    for (const f of EDITABLE_FIELDS) {
+      if (req.body[f] !== undefined) user[f] = req.body[f];
+    }
+    if (Array.isArray(req.body.interests)) user.interests = req.body.interests;
+    // Subscription state (set by billing in production; editable here for
+    // manual/admin/testing flows).
+    if (typeof req.body.is_subscription === "boolean") user.is_subscription = req.body.is_subscription;
 
     await user.save();
     return successResponse(res, publicProfile(user), "Profile updated");

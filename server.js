@@ -41,6 +41,8 @@ const PORT = process.env.PORT || 8080;
     await connectUserDB();
     await connectContentDB();
     app.listen(PORT, () => console.log(`🚀 What's New backend running on http://localhost:${PORT}`));
+    // News feed every 2h + question bank every 1h (content-service jobs).
+    require("./services/content-service/jobs/schedulers").startSchedulers();
   } catch (err) {
     console.error("❌ Startup failed:", err.message);
     process.exit(1);

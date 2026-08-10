@@ -56,12 +56,48 @@ async function findValidOtp(userId, purpose, code) {
   return otp;
 }
 
+// Optional profile fields a client may send at registration. Whitelisted so a
+// request can't set sensitive fields (password/isVerified/refreshToken/etc).
+const PROFILE_FIELDS = [
+  "firstName", "lastName", "name", "username",
+  "bio", "avatar", "designation", "department", "cadre", "tier",
+];
+
+// Pick only the allowed, defined profile fields from a request body.
+function pickProfile(body) {
+  const out = {};
+  for (const f of PROFILE_FIELDS) {
+    if (body[f] !== undefined && body[f] !== null && body[f] !== "") out[f] = body[f];
+  }
+  if (Array.isArray(body.interests)) out.interests = body.interests;
+  return out;
+}
+
 // ---------------- Register ----------------
+// email + password are required; every other profile field is optional and
+// validated against a whitelist so registration can capture richer info up front.
 async function register(req, res) {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return errorResponse(res, "email and password are required", 400);
+    }
+
+    // Friendly duplicate-email message instead of a raw Mongo E11000 error.
+    if (await User.findOne({ email })) {
+      return errorResponse(res, "An account with this email already exists", 409);
+    }
+
+    const profile = pickProfile(req.body);
+
+    // If a username was supplied, make sure it isn't already taken (the model's
+    // unique index would otherwise throw a cryptic error).
+    if (profile.username && (await User.findOne({ username: profile.username }))) {
+      return errorResponse(res, "Username already taken", 409);
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPassword });
+    const user = await User.create({ email, password: hashedPassword, ...profile });
 
     await createAndSendOtp(user, "signup", "Your OTP Code");
 
@@ -102,6 +138,7 @@ function executiveProfile(user) {
     cadre: user.cadre || null,
     tier: user.tier || null,
     interests: user.interests || [],
+    is_subscription: !!user.is_subscription,
   };
 }
 

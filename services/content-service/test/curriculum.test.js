@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { CURRICULUM_TAGS, iconForCategory, categoriesForSlug } = require("../config/curriculum");
+const { CURRICULUM_TAGS, iconForCategory, categoriesForSlug, tagsForSlug } = require("../config/curriculum");
 
 test("curriculum exposes the six home-page tags with the 'all' tag first", () => {
   assert.equal(CURRICULUM_TAGS.length, 6);
@@ -25,4 +25,18 @@ test("categoriesForSlug returns null for all and mapped names otherwise", () => 
   assert.equal(categoriesForSlug(undefined), null);
   assert.deepEqual(categoriesForSlug("polity"), ["Polity", "Governance"]);
   assert.deepEqual(categoriesForSlug("unknown-slug"), ["unknown-slug"]);
+});
+
+// The dashboard filter now matches News.tags (the real subject signal), which
+// fixes the "tags filter not working" bug where every doc shared the same
+// generic categories.
+test("tagsForSlug maps a slug to the News.tags it should match", () => {
+  assert.equal(tagsForSlug("all"), null);
+  assert.equal(tagsForSlug(undefined), null);
+  assert.ok(tagsForSlug("polity").includes("Polity"));
+  assert.ok(tagsForSlug("economy").includes("Economy"));
+  assert.ok(tagsForSlug("relations").includes("IR"));
+  assert.ok(tagsForSlug("technology").includes("Science & Tech"));
+  // Unknown slug falls back to the literal tag so any tag can be filtered.
+  assert.deepEqual(tagsForSlug("Environment"), ["Environment"]);
 });

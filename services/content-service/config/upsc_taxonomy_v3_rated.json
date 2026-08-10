@@ -1,0 +1,1127 @@
+{
+  "version": 3,
+  "description": "UPSC syllabus taxonomy with per-topic exam importance (1-5). Derived from v2 topic list with rated importance for weighted test sampling.",
+  "subjects": [
+    {
+      "name": "Polity & Governance",
+      "topics": [
+        {
+          "name": "Constitution - Historical Underpinnings & Making",
+          "importance": 3
+        },
+        {
+          "name": "Constitution - Preamble & Salient Features",
+          "importance": 5
+        },
+        {
+          "name": "Constitution - Basic Structure Doctrine",
+          "importance": 5
+        },
+        {
+          "name": "Constitution - Schedules & Parts",
+          "importance": 3
+        },
+        {
+          "name": "Fundamental Rights - Right to Equality",
+          "importance": 5
+        },
+        {
+          "name": "Fundamental Rights - Right to Freedom",
+          "importance": 5
+        },
+        {
+          "name": "Fundamental Rights - Right against Exploitation",
+          "importance": 5
+        },
+        {
+          "name": "Fundamental Rights - Right to Freedom of Religion",
+          "importance": 5
+        },
+        {
+          "name": "Fundamental Rights - Cultural & Educational Rights",
+          "importance": 5
+        },
+        {
+          "name": "Fundamental Rights - Right to Constitutional Remedies & Writs",
+          "importance": 5
+        },
+        {
+          "name": "Directive Principles of State Policy",
+          "importance": 5
+        },
+        {
+          "name": "Fundamental Duties",
+          "importance": 3
+        },
+        {
+          "name": "President - Powers, Election & Functions",
+          "importance": 4
+        },
+        {
+          "name": "Vice President & Governor",
+          "importance": 4
+        },
+        {
+          "name": "Prime Minister & Council of Ministers",
+          "importance": 3
+        },
+        {
+          "name": "Cabinet Committees & Collective Responsibility",
+          "importance": 4
+        },
+        {
+          "name": "Lok Sabha - Structure & Functions",
+          "importance": 3
+        },
+        {
+          "name": "Rajya Sabha - Structure & Functions",
+          "importance": 3
+        },
+        {
+          "name": "Parliamentary Committees",
+          "importance": 5
+        },
+        {
+          "name": "Legislative Procedure & Types of Bills",
+          "importance": 3
+        },
+        {
+          "name": "Parliamentary Privileges & Anti-Defection Law",
+          "importance": 5
+        },
+        {
+          "name": "State Legislature (Assembly & Council)",
+          "importance": 3
+        },
+        {
+          "name": "Supreme Court - Jurisdiction & Powers",
+          "importance": 5
+        },
+        {
+          "name": "High Courts & Subordinate Judiciary",
+          "importance": 4
+        },
+        {
+          "name": "Judicial Review & Judicial Activism",
+          "importance": 3
+        },
+        {
+          "name": "Center-State Legislative Relations",
+          "importance": 3
+        },
+        {
+          "name": "Center-State Administrative & Financial Relations",
+          "importance": 3
+        },
+        {
+          "name": "Inter-State Councils & Zonal Councils",
+          "importance": 3
+        },
+        {
+          "name": "Panchayati Raj - 73rd Amendment",
+          "importance": 4
+        },
+        {
+          "name": "Municipalities - 74th Amendment",
+          "importance": 4
+        },
+        {
+          "name": "Election Commission & Electoral Reforms",
+          "importance": 5
+        },
+        {
+          "name": "Comptroller and Auditor General (CAG)",
+          "importance": 3
+        },
+        {
+          "name": "Union Public Service Commission (UPSC) & State PSCs",
+          "importance": 3
+        },
+        {
+          "name": "Finance Commission",
+          "importance": 3
+        },
+        {
+          "name": "NITI Aayog",
+          "importance": 3
+        },
+        {
+          "name": "Statutory & Regulatory Bodies (CVC, CBI, CIC, NHRC)",
+          "importance": 3
+        },
+        {
+          "name": "Lokpal & Lokayukta",
+          "importance": 3
+        },
+        {
+          "name": "GST Council & Cooperative Federalism Bodies",
+          "importance": 5
+        },
+        {
+          "name": "Government Policies & Schemes for Vulnerable Sections",
+          "importance": 3
+        },
+        {
+          "name": "e-Governance & Citizen Charters",
+          "importance": 3
+        },
+        {
+          "name": "Right to Information Act",
+          "importance": 3
+        },
+        {
+          "name": "Constitutional Amendments (Important Ones)",
+          "importance": 4
+        },
+        {
+          "name": "Emergency Provisions",
+          "importance": 5
+        }
+      ]
+    },
+    {
+      "name": "Economy",
+      "topics": [
+        {
+          "name": "National Income Concepts (GDP, GNP, NNP)",
+          "importance": 4
+        },
+        {
+          "name": "Economic Planning in India & Five Year Plans",
+          "importance": 3
+        },
+        {
+          "name": "NITI Aayog & Planning Mechanisms",
+          "importance": 3
+        },
+        {
+          "name": "RBI - Structure & Functions",
+          "importance": 5
+        },
+        {
+          "name": "Monetary Policy Tools (Repo, CRR, SLR)",
+          "importance": 5
+        },
+        {
+          "name": "Banking Structure - Commercial & Cooperative Banks",
+          "importance": 4
+        },
+        {
+          "name": "Non-Banking Financial Companies (NBFCs)",
+          "importance": 4
+        },
+        {
+          "name": "Financial Inclusion & Digital Payments",
+          "importance": 3
+        },
+        {
+          "name": "Union Budget - Structure & Process",
+          "importance": 5
+        },
+        {
+          "name": "Fiscal Policy & Deficit Financing",
+          "importance": 5
+        },
+        {
+          "name": "Public Debt & FRBM Act",
+          "importance": 3
+        },
+        {
+          "name": "Money Market Instruments",
+          "importance": 3
+        },
+        {
+          "name": "Capital Market - SEBI, Stock Exchanges",
+          "importance": 3
+        },
+        {
+          "name": "Mutual Funds & Insurance Sector",
+          "importance": 3
+        },
+        {
+          "name": "Inflation - Types, Causes & Measurement (WPI, CPI)",
+          "importance": 5
+        },
+        {
+          "name": "Unemployment - Types & Measurement",
+          "importance": 5
+        },
+        {
+          "name": "Balance of Payments & Current Account",
+          "importance": 3
+        },
+        {
+          "name": "Foreign Direct Investment (FDI) & Foreign Portfolio Investment (FPI)",
+          "importance": 3
+        },
+        {
+          "name": "Exchange Rate & Currency Management",
+          "importance": 3
+        },
+        {
+          "name": "Agricultural Pricing & MSP",
+          "importance": 3
+        },
+        {
+          "name": "Agricultural Marketing & Storage (APMC, e-NAM)",
+          "importance": 3
+        },
+        {
+          "name": "Food Security & PDS",
+          "importance": 3
+        },
+        {
+          "name": "Land Reforms & Agricultural Credit",
+          "importance": 4
+        },
+        {
+          "name": "Industrial Policy & Ease of Doing Business",
+          "importance": 4
+        },
+        {
+          "name": "MSME Sector",
+          "importance": 3
+        },
+        {
+          "name": "Infrastructure - Energy Sector",
+          "importance": 3
+        },
+        {
+          "name": "Infrastructure - Transport (Roads, Railways, Ports)",
+          "importance": 3
+        },
+        {
+          "name": "Inclusive Growth & Financial Inclusion Schemes",
+          "importance": 3
+        },
+        {
+          "name": "Poverty - Measurement & Alleviation Programs",
+          "importance": 5
+        },
+        {
+          "name": "Direct Tax Structure (Income Tax, Corporate Tax)",
+          "importance": 3
+        },
+        {
+          "name": "Indirect Tax & GST",
+          "importance": 5
+        },
+        {
+          "name": "External Sector - WTO & Trade Agreements",
+          "importance": 4
+        },
+        {
+          "name": "International Financial Institutions (IMF, World Bank)",
+          "importance": 4
+        },
+        {
+          "name": "Employment Generation Schemes (MGNREGA etc.)",
+          "importance": 3
+        },
+        {
+          "name": "Economic Survey - Key Themes",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "History - Ancient India",
+      "topics": [
+        {
+          "name": "Pre-Historic & Proto-Historic Period",
+          "importance": 3
+        },
+        {
+          "name": "Indus Valley Civilization - Society & Economy",
+          "importance": 3
+        },
+        {
+          "name": "Indus Valley Civilization - Decline & Sites",
+          "importance": 3
+        },
+        {
+          "name": "Vedic Age - Early Vedic Period",
+          "importance": 3
+        },
+        {
+          "name": "Vedic Age - Later Vedic Period",
+          "importance": 3
+        },
+        {
+          "name": "Jainism - Origin & Philosophy",
+          "importance": 3
+        },
+        {
+          "name": "Buddhism - Origin & Philosophy",
+          "importance": 3
+        },
+        {
+          "name": "Mahajanapadas & Rise of Magadha",
+          "importance": 3
+        },
+        {
+          "name": "Mauryan Empire - Administration",
+          "importance": 3
+        },
+        {
+          "name": "Mauryan Empire - Ashoka & Edicts",
+          "importance": 3
+        },
+        {
+          "name": "Post-Mauryan Dynasties (Shungas, Kushans)",
+          "importance": 3
+        },
+        {
+          "name": "Sangam Age & South Indian Kingdoms",
+          "importance": 3
+        },
+        {
+          "name": "Gupta Empire - Administration & Economy",
+          "importance": 3
+        },
+        {
+          "name": "Gupta Age - Art, Science & Literature",
+          "importance": 3
+        },
+        {
+          "name": "Post-Gupta Regional Kingdoms (Harsha, Pallavas, Chalukyas)",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "History - Medieval India",
+      "topics": [
+        {
+          "name": "Delhi Sultanate - Slave & Khilji Dynasty",
+          "importance": 3
+        },
+        {
+          "name": "Delhi Sultanate - Tughlaq & Later Dynasties",
+          "importance": 3
+        },
+        {
+          "name": "Delhi Sultanate - Administration",
+          "importance": 3
+        },
+        {
+          "name": "Vijayanagara Empire",
+          "importance": 3
+        },
+        {
+          "name": "Bahmani Kingdom & Deccan Sultanates",
+          "importance": 3
+        },
+        {
+          "name": "Bhakti Movement",
+          "importance": 3
+        },
+        {
+          "name": "Sufi Movement",
+          "importance": 3
+        },
+        {
+          "name": "Mughal Empire - Babur to Humayun",
+          "importance": 3
+        },
+        {
+          "name": "Mughal Empire - Akbar's Administration",
+          "importance": 3
+        },
+        {
+          "name": "Mughal Empire - Jahangir to Aurangzeb",
+          "importance": 3
+        },
+        {
+          "name": "Mughal Decline & Successor States",
+          "importance": 3
+        },
+        {
+          "name": "Maratha Empire",
+          "importance": 3
+        },
+        {
+          "name": "Medieval Art, Architecture & Literature",
+          "importance": 3
+        },
+        {
+          "name": "Medieval Economy & Trade",
+          "importance": 4
+        }
+      ]
+    },
+    {
+      "name": "History - Modern India",
+      "topics": [
+        {
+          "name": "Advent of Europeans (Portuguese, Dutch, French, British)",
+          "importance": 3
+        },
+        {
+          "name": "British Expansion in India (Battles & Annexations)",
+          "importance": 3
+        },
+        {
+          "name": "British Economic Policies & Drain of Wealth",
+          "importance": 3
+        },
+        {
+          "name": "Permanent Settlement & Land Revenue Systems",
+          "importance": 3
+        },
+        {
+          "name": "Socio-Religious Reform Movements - Bengal",
+          "importance": 3
+        },
+        {
+          "name": "Socio-Religious Reform Movements - Other Regions",
+          "importance": 3
+        },
+        {
+          "name": "Revolt of 1857 - Causes & Consequences",
+          "importance": 3
+        },
+        {
+          "name": "Formation of Indian National Congress",
+          "importance": 3
+        },
+        {
+          "name": "Moderate Phase of Nationalism",
+          "importance": 3
+        },
+        {
+          "name": "Extremist Phase & Swadeshi Movement",
+          "importance": 3
+        },
+        {
+          "name": "Revolutionary Movements",
+          "importance": 3
+        },
+        {
+          "name": "Home Rule Movement",
+          "importance": 3
+        },
+        {
+          "name": "Gandhi's Early Movements (Champaran, Kheda, Ahmedabad)",
+          "importance": 3
+        },
+        {
+          "name": "Non-Cooperation Movement",
+          "importance": 3
+        },
+        {
+          "name": "Civil Disobedience Movement",
+          "importance": 3
+        },
+        {
+          "name": "Quit India Movement",
+          "importance": 3
+        },
+        {
+          "name": "Indian National Army & Subhas Chandra Bose",
+          "importance": 3
+        },
+        {
+          "name": "Growth of Communalism & Two-Nation Theory",
+          "importance": 3
+        },
+        {
+          "name": "Partition & Independence",
+          "importance": 4
+        },
+        {
+          "name": "Integration of Princely States",
+          "importance": 3
+        },
+        {
+          "name": "World History - Industrial Revolution",
+          "importance": 4
+        },
+        {
+          "name": "World History - World War I & II",
+          "importance": 3
+        },
+        {
+          "name": "World History - Colonization & Decolonization",
+          "importance": 3
+        },
+        {
+          "name": "World History - Cold War Era",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "Geography",
+      "topics": [
+        {
+          "name": "Geomorphology - Landforms & Processes",
+          "importance": 3
+        },
+        {
+          "name": "Geomorphology - Plate Tectonics & Earthquakes",
+          "importance": 3
+        },
+        {
+          "name": "Climatology - Atmosphere & Composition",
+          "importance": 3
+        },
+        {
+          "name": "Climatology - Pressure Belts & Winds",
+          "importance": 3
+        },
+        {
+          "name": "Climatology - Cyclones & Monsoons",
+          "importance": 4
+        },
+        {
+          "name": "Oceanography - Ocean Currents",
+          "importance": 3
+        },
+        {
+          "name": "Oceanography - Ocean Relief & Salinity",
+          "importance": 3
+        },
+        {
+          "name": "Indian Physiography - Himalayas",
+          "importance": 3
+        },
+        {
+          "name": "Indian Physiography - Northern Plains & Peninsular Plateau",
+          "importance": 3
+        },
+        {
+          "name": "Indian Physiography - Coastal Plains & Islands",
+          "importance": 3
+        },
+        {
+          "name": "Indian Drainage - Himalayan Rivers",
+          "importance": 3
+        },
+        {
+          "name": "Indian Drainage - Peninsular Rivers",
+          "importance": 3
+        },
+        {
+          "name": "Indian Climate & Monsoon Mechanism",
+          "importance": 4
+        },
+        {
+          "name": "Indian Natural Vegetation & Forest Types",
+          "importance": 3
+        },
+        {
+          "name": "Indian Soils - Types & Distribution",
+          "importance": 3
+        },
+        {
+          "name": "Agriculture - Cropping Patterns & Seasons",
+          "importance": 4
+        },
+        {
+          "name": "Agriculture - Irrigation Systems",
+          "importance": 4
+        },
+        {
+          "name": "Mineral Resources - Metallic & Non-Metallic",
+          "importance": 3
+        },
+        {
+          "name": "Energy Resources - Conventional",
+          "importance": 3
+        },
+        {
+          "name": "Energy Resources - Non-Conventional",
+          "importance": 3
+        },
+        {
+          "name": "Industries - Location Factors & Major Industrial Regions",
+          "importance": 4
+        },
+        {
+          "name": "Transport Networks - Roads, Rail, Waterways",
+          "importance": 3
+        },
+        {
+          "name": "Population - Distribution & Density",
+          "importance": 3
+        },
+        {
+          "name": "Population - Migration & Urbanization",
+          "importance": 3
+        },
+        {
+          "name": "World Geography - Physical Features",
+          "importance": 3
+        },
+        {
+          "name": "World Geography - Economic Geography",
+          "importance": 3
+        },
+        {
+          "name": "Geographical Phenomena in News",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "Indian Society",
+      "topics": [
+        {
+          "name": "Salient Features of Indian Society",
+          "importance": 3
+        },
+        {
+          "name": "Caste System & Social Stratification",
+          "importance": 3
+        },
+        {
+          "name": "Family & Marriage in Indian Society",
+          "importance": 3
+        },
+        {
+          "name": "Role & Status of Women",
+          "importance": 3
+        },
+        {
+          "name": "Women's Empowerment Programs & Issues",
+          "importance": 3
+        },
+        {
+          "name": "Population Issues - Growth & Composition",
+          "importance": 3
+        },
+        {
+          "name": "Poverty & Deprivation",
+          "importance": 5
+        },
+        {
+          "name": "Urbanization - Problems & Remedies",
+          "importance": 3
+        },
+        {
+          "name": "Migration - Internal & International",
+          "importance": 4
+        },
+        {
+          "name": "Globalization's Impact on Indian Society",
+          "importance": 3
+        },
+        {
+          "name": "Social Empowerment - SC/ST/OBC",
+          "importance": 3
+        },
+        {
+          "name": "Social Empowerment - Minorities & Disabled",
+          "importance": 3
+        },
+        {
+          "name": "Communalism & Regionalism",
+          "importance": 3
+        },
+        {
+          "name": "Secularism in Indian Context",
+          "importance": 3
+        },
+        {
+          "name": "Social Justice - Vulnerable Sections' Welfare",
+          "importance": 3
+        },
+        {
+          "name": "Effects of Climate Change on Society",
+          "importance": 5
+        }
+      ]
+    },
+    {
+      "name": "Environment & Ecology",
+      "topics": [
+        {
+          "name": "Ecology Basics - Ecosystem Structure & Function",
+          "importance": 3
+        },
+        {
+          "name": "Food Chains, Food Webs & Energy Flow",
+          "importance": 3
+        },
+        {
+          "name": "Biomes of the World",
+          "importance": 3
+        },
+        {
+          "name": "Biodiversity - Levels & Significance",
+          "importance": 5
+        },
+        {
+          "name": "Biodiversity Hotspots in India",
+          "importance": 5
+        },
+        {
+          "name": "Protected Areas - National Parks & Sanctuaries",
+          "importance": 3
+        },
+        {
+          "name": "Biosphere Reserves & Ramsar Sites",
+          "importance": 3
+        },
+        {
+          "name": "Species in News - Flora",
+          "importance": 3
+        },
+        {
+          "name": "Species in News - Fauna",
+          "importance": 3
+        },
+        {
+          "name": "Climate Change - Causes & Greenhouse Gases",
+          "importance": 5
+        },
+        {
+          "name": "Climate Change - Impacts & Adaptation",
+          "importance": 5
+        },
+        {
+          "name": "International Conventions - UNFCCC & Paris Agreement",
+          "importance": 4
+        },
+        {
+          "name": "International Conventions - CBD, CITES, Ramsar",
+          "importance": 4
+        },
+        {
+          "name": "Environmental Pollution - Air & Water",
+          "importance": 4
+        },
+        {
+          "name": "Environmental Pollution - Soil & Noise",
+          "importance": 4
+        },
+        {
+          "name": "Environmental Laws & Institutional Framework in India",
+          "importance": 4
+        },
+        {
+          "name": "Environmental Impact Assessment",
+          "importance": 4
+        },
+        {
+          "name": "Disaster Management - Natural Disasters",
+          "importance": 4
+        },
+        {
+          "name": "Disaster Management - Institutional Framework (NDMA)",
+          "importance": 4
+        },
+        {
+          "name": "Renewable Energy & Sustainable Development",
+          "importance": 3
+        },
+        {
+          "name": "Waste Management (E-waste, Plastic, Solid Waste)",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "Science & Technology",
+      "topics": [
+        {
+          "name": "Space Technology - ISRO Missions",
+          "importance": 3
+        },
+        {
+          "name": "Space Technology - Satellites & Launch Vehicles",
+          "importance": 3
+        },
+        {
+          "name": "Defence Technology - Missile Systems",
+          "importance": 3
+        },
+        {
+          "name": "Defence Technology - Indigenous Defence Production",
+          "importance": 3
+        },
+        {
+          "name": "Biotechnology - Genetic Engineering",
+          "importance": 3
+        },
+        {
+          "name": "Biotechnology - Applications in Agriculture & Medicine",
+          "importance": 4
+        },
+        {
+          "name": "Information Technology - Basics & Applications",
+          "importance": 3
+        },
+        {
+          "name": "Cyber Security - Threats & Frameworks",
+          "importance": 4
+        },
+        {
+          "name": "Nanotechnology - Applications",
+          "importance": 3
+        },
+        {
+          "name": "Nuclear Technology - Energy & Policy",
+          "importance": 3
+        },
+        {
+          "name": "Health Technology - Vaccines & Biomedical Advances",
+          "importance": 3
+        },
+        {
+          "name": "Robotics & Automation",
+          "importance": 3
+        },
+        {
+          "name": "Artificial Intelligence & Machine Learning",
+          "importance": 3
+        },
+        {
+          "name": "Blockchain & Emerging Digital Technologies",
+          "importance": 3
+        },
+        {
+          "name": "Quantum Computing",
+          "importance": 3
+        },
+        {
+          "name": "Awards, Discoveries & Innovations in News",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "International Relations",
+      "topics": [
+        {
+          "name": "India-Neighborhood - Pakistan & China",
+          "importance": 3
+        },
+        {
+          "name": "India-Neighborhood - Bangladesh, Nepal, Bhutan",
+          "importance": 3
+        },
+        {
+          "name": "India-Neighborhood - Sri Lanka, Myanmar, Maldives",
+          "importance": 3
+        },
+        {
+          "name": "India-USA Relations",
+          "importance": 3
+        },
+        {
+          "name": "India-Russia Relations",
+          "importance": 3
+        },
+        {
+          "name": "India-EU Relations",
+          "importance": 3
+        },
+        {
+          "name": "United Nations - Structure & Reforms",
+          "importance": 3
+        },
+        {
+          "name": "IMF, World Bank & WTO",
+          "importance": 3
+        },
+        {
+          "name": "WHO & Other UN Agencies",
+          "importance": 4
+        },
+        {
+          "name": "SAARC & BIMSTEC",
+          "importance": 3
+        },
+        {
+          "name": "ASEAN & Act East Policy",
+          "importance": 3
+        },
+        {
+          "name": "BRICS & SCO",
+          "importance": 3
+        },
+        {
+          "name": "QUAD & Indo-Pacific Strategy",
+          "importance": 3
+        },
+        {
+          "name": "G20 & Global Economic Governance",
+          "importance": 3
+        },
+        {
+          "name": "India's Foreign Policy - Evolution & Principles",
+          "importance": 3
+        },
+        {
+          "name": "Indian Diaspora",
+          "importance": 3
+        },
+        {
+          "name": "Important International Treaties & Agreements",
+          "importance": 4
+        }
+      ]
+    },
+    {
+      "name": "Security & Disaster Management",
+      "topics": [
+        {
+          "name": "Terrorism - Types & Counter-Terrorism Framework",
+          "importance": 3
+        },
+        {
+          "name": "Left-Wing Extremism",
+          "importance": 3
+        },
+        {
+          "name": "Insurgency in North-East India",
+          "importance": 3
+        },
+        {
+          "name": "Border Management - Land Borders",
+          "importance": 3
+        },
+        {
+          "name": "Border Management - Coastal & Maritime Security",
+          "importance": 3
+        },
+        {
+          "name": "Organized Crime & Money Laundering",
+          "importance": 3
+        },
+        {
+          "name": "Cyber Warfare & Cyber Security Framework",
+          "importance": 4
+        },
+        {
+          "name": "Role of Media & Social Media in Security",
+          "importance": 3
+        },
+        {
+          "name": "Security Forces - Structure & Mandate",
+          "importance": 3
+        },
+        {
+          "name": "Disaster Management Cycle",
+          "importance": 4
+        },
+        {
+          "name": "Institutional Framework (NDMA, SDMA, NDRF)",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "Ethics, Integrity & Aptitude",
+      "topics": [
+        {
+          "name": "Ethics - Human Interface & Dimensions",
+          "importance": 4
+        },
+        {
+          "name": "Determinants of Ethics",
+          "importance": 4
+        },
+        {
+          "name": "Consequences of Ethics in Public Life",
+          "importance": 4
+        },
+        {
+          "name": "Attitude - Structure & Function",
+          "importance": 3
+        },
+        {
+          "name": "Attitude - Influence on Thought & Behavior",
+          "importance": 3
+        },
+        {
+          "name": "Aptitude & Foundational Values for Civil Servants",
+          "importance": 3
+        },
+        {
+          "name": "Emotional Intelligence - Concepts & Utility",
+          "importance": 3
+        },
+        {
+          "name": "Moral Thinkers & Philosophers - Indian",
+          "importance": 3
+        },
+        {
+          "name": "Moral Thinkers & Philosophers - Western",
+          "importance": 3
+        },
+        {
+          "name": "Public Service Values",
+          "importance": 3
+        },
+        {
+          "name": "Probity in Governance - Concept",
+          "importance": 3
+        },
+        {
+          "name": "Probity in Governance - Codes of Conduct",
+          "importance": 3
+        },
+        {
+          "name": "Corporate Governance",
+          "importance": 3
+        },
+        {
+          "name": "Case Studies - Administrative Ethical Dilemmas",
+          "importance": 3
+        }
+      ]
+    },
+    {
+      "name": "CSAT (Prelims Paper 2)",
+      "topics": [
+        {
+          "name": "Reading Comprehension",
+          "importance": 2
+        },
+        {
+          "name": "Interpersonal & Communication Skills",
+          "importance": 3
+        },
+        {
+          "name": "Logical Reasoning - Verbal",
+          "importance": 3
+        },
+        {
+          "name": "Logical Reasoning - Non-Verbal",
+          "importance": 3
+        },
+        {
+          "name": "Analytical Ability",
+          "importance": 3
+        },
+        {
+          "name": "Decision Making & Problem Solving",
+          "importance": 3
+        },
+        {
+          "name": "General Mental Ability",
+          "importance": 3
+        },
+        {
+          "name": "Basic Numeracy - Arithmetic",
+          "importance": 2
+        },
+        {
+          "name": "Basic Numeracy - Algebra & Geometry",
+          "importance": 2
+        },
+        {
+          "name": "Data Interpretation - Charts & Graphs",
+          "importance": 3
+        },
+        {
+          "name": "Data Interpretation - Tables & Data Sufficiency",
+          "importance": 3
+        }
+      ]
+    }
+  ]
+}

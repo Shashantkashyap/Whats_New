@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema(
     // Interests are a small, bounded list read/written as a whole — embedding an
     // array on the user is the natural Mongo model (no separate join table).
     interests: { type: [String], default: [] },
+
+    // Distinguishes a paying UPSC subscriber/student from a general news reader.
+    // Gates student-only features (tests, practice, saved news) at the product
+    // layer; surfaced in the login/profile response as `is_subscription`.
+    is_subscription: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

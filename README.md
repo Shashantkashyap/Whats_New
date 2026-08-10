@@ -99,7 +99,7 @@ The system follows a **microservices architecture** with independent `content-se
 | **Email**          | Nodemailer (Gmail SMTP)                           | OTP delivery for signup & password reset      |
 | **Scraping**       | Puppeteer + Cheerio                               | Web scraping capabilities (pipeline-ready)    |
 | **HTTP Client**    | Axios                                             | External API requests                         |
-| **Scheduling**     | node-cron                                         | Scheduled pipeline execution (scaffolded)     |
+| **Scheduling**     | node-cron                                         | News pipeline every 2h; question bank every 1h |
 | **Dev Tools**      | Nodemon                                           | Hot-reload server                             |
 
 ---

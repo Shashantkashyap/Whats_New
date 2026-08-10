@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { runContentPipeline } = require("../pipeline/contentPipeline");
+const { getSchedulerStatus } = require("../jobs/schedulers");
+const { apiOk } = require("../utils/apiResponse");
 
 // -------------------------
 // Manual trigger
@@ -22,5 +24,8 @@ router.post("/fetch-now", (req, res) => {
     message: `Content pipeline started (mode=${mode}); results will appear shortly.`,
   });
 });
+
+// In-process cron status (news every 2h, questions every 1h).
+router.get("/schedulers", (req, res) => apiOk(res, getSchedulerStatus()));
 
 module.exports = router;

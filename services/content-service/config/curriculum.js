@@ -13,16 +13,25 @@ const CATEGORY_ICONS = {
 
 const DEFAULT_ICON = "layers";
 
-// Fixed curriculum tags shown on the home page. `matchCategories` lists the
-// News.categories values that count toward this tag's active_dossiers_count.
-// `all` is special-cased (counts every dossier).
+// Fixed curriculum tags shown on the home page.
+//
+// IMPORTANT: the dashboard filter was broken because it matched on
+// News.categories, but the pipeline stores the same generic categories
+// (["UPSC","Current Affairs"]) on every article — the real subject signal lives
+// in News.tags (Polity, Economy, IR, "Science & Tech", …). So each curriculum
+// tag now carries `matchTags` (the News.tags values that count toward it) and
+// filtering/counting is done against `tags`. `matchCategories` is retained for
+// backward compatibility. `all` is special-cased (counts every dossier).
+// `is_priority` marks exam-critical topics that should surface first on the
+// dashboard (the high-yield GS subjects). Data-driven so the front-end contract
+// stays in one place.
 const CURRICULUM_TAGS = [
-  { id: "tag-all", slug: "all", label: "All Curriculum", icon: "layers", matchCategories: null },
-  { id: "tag-polity", slug: "polity", label: "Polity & Governance", icon: "shield", matchCategories: ["Polity", "Governance"] },
-  { id: "tag-economy", slug: "economy", label: "Economy & Development", icon: "trending-up", matchCategories: ["Economy", "Development"] },
-  { id: "tag-relations", slug: "relations", label: "International Relations", icon: "globe", matchCategories: ["Relations", "International Relations"] },
-  { id: "tag-tech", slug: "technology", label: "Science & Technology", icon: "cpu", matchCategories: ["Technology", "Science", "Science & Technology"] },
-  { id: "tag-ethics", slug: "ethics", label: "Ethics & Integrity", icon: "compass", matchCategories: ["Ethics", "Integrity"] },
+  { id: "tag-all", slug: "all", label: "All Curriculum", icon: "layers", matchCategories: null, matchTags: null, is_priority: false },
+  { id: "tag-polity", slug: "polity", label: "Polity & Governance", icon: "shield", matchCategories: ["Polity", "Governance"], matchTags: ["Polity", "Governance", "Judiciary", "Legal Affairs", "Public Administration"], is_priority: true },
+  { id: "tag-economy", slug: "economy", label: "Economy & Development", icon: "trending-up", matchCategories: ["Economy", "Development"], matchTags: ["Economy", "Trade", "Finance", "Agriculture", "Infrastructure", "Energy", "Transport"], is_priority: true },
+  { id: "tag-relations", slug: "relations", label: "International Relations", icon: "globe", matchCategories: ["Relations", "International Relations"], matchTags: ["IR"], is_priority: true },
+  { id: "tag-tech", slug: "technology", label: "Science & Technology", icon: "cpu", matchCategories: ["Technology", "Science", "Science & Technology"], matchTags: ["Science & Tech", "Technology", "Cybersecurity", "Innovation"], is_priority: false },
+  { id: "tag-ethics", slug: "ethics", label: "Ethics & Integrity", icon: "compass", matchCategories: ["Ethics", "Integrity"], matchTags: ["Ethics"], is_priority: false },
 ];
 
 // Resolve a free-form category string to an icon slug. Case-insensitive and
@@ -46,4 +55,14 @@ function categoriesForSlug(slug) {
   return tag ? tag.matchCategories : [slug];
 }
 
-module.exports = { CURRICULUM_TAGS, CATEGORY_ICONS, DEFAULT_ICON, iconForCategory, categoriesForSlug };
+// News.tags values a tag slug maps to — this is what the dashboard filter now
+// uses (see CURRICULUM_TAGS note). Returns null for "all" (no tag filter). An
+// unknown slug falls back to treating the slug itself as a literal tag so an
+// arbitrary tag can still be filtered directly.
+function tagsForSlug(slug) {
+  if (!slug || slug === "all") return null;
+  const tag = CURRICULUM_TAGS.find((t) => t.slug === slug);
+  return tag ? tag.matchTags : [slug];
+}
+
+module.exports = { CURRICULUM_TAGS, CATEGORY_ICONS, DEFAULT_ICON, iconForCategory, categoriesForSlug, tagsForSlug };

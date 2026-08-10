@@ -10,6 +10,8 @@ connectDB()
     app.listen(PORT, () =>
       console.log(`🚀 Server running on http://localhost:${PORT}`)
     );
+    // News feed every 2h + question bank every 1h (see jobs/schedulers.js).
+    require("./jobs/schedulers").startSchedulers();
   })
   .catch((err) => {
     console.error("❌ Failed to connect to DB", err);

@@ -80,9 +80,16 @@ const newsSchema = new mongoose.Schema(
       hints: [{ type: String, trim: true }],
     },
 
+    // Legacy hotlink (Pixabay/Unsplash). Kept for migration; never returned in
+    // API responses. Prefer imageDocumentId → GET /api/v1/media/:id.
     imageUrl: {
       type: String,
       trim: true,
+    },
+    imageDocumentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "MediaAsset",
+      index: true,
     },
 
     // Generic fields
@@ -101,6 +108,13 @@ const newsSchema = new mongoose.Schema(
     relevanceScore: {
       type: Number,
       default: 0,
+    },
+    // Editorial priority flag. High-priority (exam-critical) daily news is
+    // surfaced first in the feed/decks/list. Exposed as `is_priority` in APIs.
+    isPriority: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     // Gemini-generated UPSC exam-value score (1-10) based on exam-relevance,
     // factual depth, and current-affairs weightage. 0 = unrated. Distinct from

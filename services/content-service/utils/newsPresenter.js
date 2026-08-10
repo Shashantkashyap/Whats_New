@@ -79,11 +79,20 @@ function id(doc) {
   return doc._id ? String(doc._id) : doc.id;
 }
 
+// Public media handle only — never the private storage/CDN URL. Clients fetch
+// bytes from GET /api/v1/media/:image_document_id.
+function imageDocumentId(doc) {
+  if (!doc.imageDocumentId) return null;
+  return String(doc.imageDocumentId);
+}
+
 // --- Public shapes -------------------------------------------------------
 
 // Feed list item. `position` is the 1-based index across the whole result set.
-function toFeedItem(doc, position, { now = Date.now(), bookmarked = false } = {}) {
+// `challenge` is per-user MCQ progress (null for guests).
+function toFeedItem(doc, position, { now = Date.now(), bookmarked = false, challenge = null } = {}) {
   const category = primaryCategory(doc);
+  const totalMcqs = Array.isArray(doc.mcqs) ? doc.mcqs.length : 0;
   return {
     id: id(doc),
     index_code: indexCode(position),
@@ -91,11 +100,21 @@ function toFeedItem(doc, position, { now = Date.now(), bookmarked = false } = {}
     syllabus_tag: syllabusTag(doc),
     category,
     category_icon: iconForCategory(category),
+    image_document_id: imageDocumentId(doc),
     read_time: readTime(doc.content),
     priority: priorityFrom(doc.relevanceScore),
+    is_priority: !!doc.isPriority,
     updated_at_label: relativeLabel(doc.updatedAt || doc.publishedAt, now),
     synopsis: doc.description || (Array.isArray(doc.summary) && doc.summary[0]) || "",
     is_bookmarked: bookmarked,
+    // Guests: null. Authed: whether they've answered any / all dossier MCQs.
+    challenge: challenge || {
+      attempted: false,
+      completed: false,
+      answered_count: 0,
+      total_questions: totalMcqs,
+      selected_answers: {},
+    },
   };
 }
 
@@ -110,6 +129,8 @@ function toDeck(doc, { now = Date.now() } = {}) {
     category_icon: iconForCategory(category),
     tag: syllabusTag(doc),
     title: doc.title,
+    image_document_id: imageDocumentId(doc),
+    is_priority: !!doc.isPriority,
     slides: secs.map((s) => ({ slide_index: s.index, heading: s.heading, content: s.content })),
     total_slides: secs.length,
     action_cta: "Open Deep Analysis Dossier",
@@ -128,8 +149,10 @@ function toBriefDetail(doc, { now = Date.now(), bookmarked = false } = {}) {
     syllabus_tag: syllabusTag(doc),
     category,
     category_icon: iconForCategory(category),
+    image_document_id: imageDocumentId(doc),
     read_time: readTime(doc.content),
     priority: priorityFrom(doc.relevanceScore),
+    is_priority: !!doc.isPriority,
     updated_at_label: relativeLabel(doc.updatedAt || doc.publishedAt, now),
     is_bookmarked: bookmarked,
     core_briefing: doc.why || doc.description || "",
@@ -139,6 +162,12 @@ function toBriefDetail(doc, { now = Date.now(), bookmarked = false } = {}) {
       content: s.content,
     })),
     mains_focus_question: (doc.mainsQuestion && doc.mainsQuestion.question) || null,
+    // Prelims challenge MCQs — options only; answers revealed after submit-mcq.
+    prelims_mcqs: (Array.isArray(doc.mcqs) ? doc.mcqs : []).map((m, i) => ({
+      index: i,
+      question: m.question,
+      options: Array.isArray(m.options) ? m.options : [],
+    })),
     noted_references: notes,
     telemetry: {
       author: doc.author || null,
@@ -155,6 +184,7 @@ module.exports = {
   indexCode,
   syllabusTag,
   primaryCategory,
+  imageDocumentId,
   sections,
   toFeedItem,
   toDeck,
