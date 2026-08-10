@@ -1,8 +1,9 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 const { sendEmail } = require("../utils/sendEmail");
-const { successResponse, errorResponse } = require("../utils/response");
+const { successResponse, errorResponse, apiOk, apiErr } = require("../utils/response");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -55,12 +56,48 @@ async function findValidOtp(userId, purpose, code) {
   return otp;
 }
 
+// Optional profile fields a client may send at registration. Whitelisted so a
+// request can't set sensitive fields (password/isVerified/refreshToken/etc).
+const PROFILE_FIELDS = [
+  "firstName", "lastName", "name", "username",
+  "bio", "avatar", "designation", "department", "cadre", "tier",
+];
+
+// Pick only the allowed, defined profile fields from a request body.
+function pickProfile(body) {
+  const out = {};
+  for (const f of PROFILE_FIELDS) {
+    if (body[f] !== undefined && body[f] !== null && body[f] !== "") out[f] = body[f];
+  }
+  if (Array.isArray(body.interests)) out.interests = body.interests;
+  return out;
+}
+
 // ---------------- Register ----------------
+// email + password are required; every other profile field is optional and
+// validated against a whitelist so registration can capture richer info up front.
 async function register(req, res) {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return errorResponse(res, "email and password are required", 400);
+    }
+
+    // Friendly duplicate-email message instead of a raw Mongo E11000 error.
+    if (await User.findOne({ email })) {
+      return errorResponse(res, "An account with this email already exists", 409);
+    }
+
+    const profile = pickProfile(req.body);
+
+    // If a username was supplied, make sure it isn't already taken (the model's
+    // unique index would otherwise throw a cryptic error).
+    if (profile.username && (await User.findOne({ username: profile.username }))) {
+      return errorResponse(res, "Username already taken", 409);
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPassword });
+    const user = await User.create({ email, password: hashedPassword, ...profile });
 
     await createAndSendOtp(user, "signup", "Your OTP Code");
 
@@ -91,21 +128,42 @@ async function verifyOtp(req, res) {
   }
 }
 
+// Executive metadata block returned to the front-end at login.
+function executiveProfile(user) {
+  return {
+    id: user.id,
+    name: user.name || [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
+    designation: user.designation || null,
+    department: user.department || null,
+    cadre: user.cadre || null,
+    tier: user.tier || null,
+    interests: user.interests || [],
+    is_subscription: !!user.is_subscription,
+  };
+}
+
 // ---------------- Login ----------------
+// Spec-compliant: returns the session token + executive metadata in the body
+// (cookies are still set for the cookie-based flows). Invalid email OR password
+// collapse to a single AUTH_INVALID_CREDENTIALS code (also avoids enumeration).
 async function login(req, res) {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return errorResponse(res, "User not found", 404);
-    if (!user.isVerified) return errorResponse(res, "Please verify account", 403);
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return apiErr(res, "AUTH_INVALID_CREDENTIALS", "The credentials provided do not match our diplomatic registry.", 401);
+    }
+    if (!user.isVerified) {
+      return apiErr(res, "AUTH_ACCOUNT_UNVERIFIED", "Please verify your account before signing in.", 403);
+    }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return errorResponse(res, "Invalid password", 401);
+    const { accessToken } = await issueTokens(res, user);
+    const decoded = jwt.decode(accessToken);
+    const expires_at = decoded && decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null;
 
-    const tokens = await issueTokens(res, user);
-    return successResponse(res, { id: user.id, email: user.email, ...tokens }, "Logged in successfully");
+    return apiOk(res, { token: accessToken, expires_at, user: executiveProfile(user) });
   } catch (err) {
-    return errorResponse(res, err.message, 400);
+    return apiErr(res, "AUTH_LOGIN_FAILED", err.message, 500);
   }
 }
 

@@ -16,6 +16,8 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const { mapLimit } = require("../utils/concurrency");
+const { getContentImageUrl } = require("../utils/imageProvider");
+const { persistNewsImage } = require("../utils/mediaStore");
 
 // -------------------------
 // 🎯 Enhanced Tags with Priority Levels
@@ -131,37 +133,7 @@ function orderByPriority(tags) {
 }
 
 // -------------------------
-// 🔧 Unsplash helper (inline) - uses only ACCESS KEY
-// -------------------------
-// .env must have: UNSPLASH_ACCESS_KEY=your_key
-async function getUnsplashImageUrl(query) {
-  const fallback = "https://placehold.co/800x400?text=No+Image";
-  try {
-    if (!process.env.UNSPLASH_ACCESS_KEY) {
-      console.warn("Unsplash access key not set; returning placeholder.");
-      return fallback;
-    }
-
-    const url = "https://api.unsplash.com/search/photos";
-    const resp = await axios.get(url, {
-      params: { query, per_page: 1, orientation: "landscape" },
-      headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` },
-      timeout: 8000,
-    });
-
-    const result = resp.data && resp.data.results && resp.data.results[0];
-    if (!result) return fallback;
-
-    // choose appropriate size (regular is good for web)
-    return result.urls?.regular || result.urls?.small || result.urls?.full || fallback;
-  } catch (err) {
-    console.warn("getUnsplashImageUrl error:", err?.message || err);
-    return fallback;
-  }
-}
-
-// -------------------------
-// 🎨 NEW: Image Search Term Generator
+// 🎨 Image Search Term Generator
 // -------------------------
 function generateImageSearchTerm(newsItem, generatedContent) {
   const title = newsItem.title || "";
@@ -330,6 +302,12 @@ function normalizeGeminiOutput(data) {
 
   safe.why = safe.why || "Context and significance of this development for UPSC preparation";
 
+  // rating: Gemini's 1-10 UPSC exam-value score. Clamp to the valid band; a
+  // missing/invalid value becomes 0 so unrated content sorts below rated content.
+  const rating = Number(safe.rating);
+  safe.rating = Number.isFinite(rating) ? Math.min(Math.max(Math.round(rating), 1), 10) : 0;
+  safe.ratingRationale = String(safe.ratingRationale || "").trim();
+
   return safe;
 }
 
@@ -480,8 +458,10 @@ const GEMINI_RESPONSE_SCHEMA = {
       },
       required: ["question", "hints"],
     },
+    rating: { type: s.NUMBER },
+    ratingRationale: { type: s.STRING },
   },
-  required: ["headline", "why", "summary", "flowchartNodes", "examRelevance", "mcqs", "mainsQuestion"],
+  required: ["headline", "why", "summary", "flowchartNodes", "examRelevance", "mcqs", "mainsQuestion", "rating", "ratingRationale"],
 };
 
 function buildGeminiContentPrompt(newsItem) {
@@ -505,6 +485,8 @@ FIELD GUIDANCE:
 - examRelevance: exact GS papers and topics.
 - mcqs: 2-3 factual questions, each with exactly 4 options; answer must equal one option verbatim.
 - mainsQuestion: one analytical, multi-dimensional question with 3 hints.
+- rating: integer 1-10 scoring this article's value to a UPSC aspirant, judged ONLY on the ARTICLE. Weigh three criteria: (a) exam-relevance ~50% — overlap with the UPSC syllabus / GS papers; (b) factual depth ~30% — density of verifiable facts, data, schemes, institutions, constitutional/legal angles; (c) current-affairs weightage ~20% — significance and likelihood of appearing in prelims/mains this cycle. Bands: 8-10 = high-yield core syllabus, 5-7 = useful supporting material, 1-4 = tangential / low exam value.
+- ratingRationale: one sentence (<= 200 chars) justifying the rating against the three criteria above.
 - Formal, exam-appropriate language throughout.
 
 METADATA: title="${safeTitle}" | source="${newsItem.source || "Unknown"}" | publishedAt="${newsItem.publishedAt || new Date().toISOString()}" | tags=${JSON.stringify(newsItem.tags || [])}
@@ -635,14 +617,28 @@ async function processNewsItem(newsItem, results) {
     return;
   }
 
-  // Image is best-effort: a failure here must not drop otherwise-valid content.
-  let imageUrl = "https://placehold.co/800x400?text=No+Image";
+  // Image is best-effort: resolve a hotlink, re-host to persistent storage, and
+  // keep only a MediaAsset document id on the news doc (URLs never leave the API).
+  let imageDocumentId = null;
+  let imageUrl = "";
+  const category =
+    (Array.isArray(newsItem.tags) && newsItem.tags[0]) ||
+    (Array.isArray(newsItem.categories) && newsItem.categories[0]) ||
+    "General";
   try {
-    imageUrl = await getUnsplashImageUrl(generateImageSearchTerm(newsItem, content));
+    imageUrl = await getContentImageUrl(generateImageSearchTerm(newsItem, content));
+    const persisted = await persistNewsImage(imageUrl, { category });
+    imageDocumentId = persisted.documentId;
     results.imagesGenerated++;
   } catch (imageError) {
     console.warn(`⚠️ Image generation failed: ${imageError.message}`);
     results.imagesFailed++;
+    try {
+      const persisted = await persistNewsImage(null, { category });
+      imageDocumentId = persisted.documentId;
+    } catch (fallbackErr) {
+      console.warn(`⚠️ Subject fallback image failed: ${fallbackErr.message}`);
+    }
   }
 
   // `content` field stores the ORIGINAL scraped article body (the verifiable
@@ -663,10 +659,13 @@ async function processNewsItem(newsItem, results) {
     examRelevance: content.examRelevance || [],
     mcqs: content.mcqs || [],
     mainsQuestion: content.mainsQuestion || { question: "", hints: [] },
-    imageUrl,
+    imageUrl: "", // private hotlinks are not retained once re-hosted
+    imageDocumentId,
     tags: newsItem.tags || [],
     categories: newsItem.categories || ["UPSC", "Current Affairs"],
     relevanceScore: relevance,
+    rating: content.rating || 0,
+    ratingRationale: content.ratingRationale || "",
   });
 
   await newsDoc.save();
@@ -1159,7 +1158,6 @@ module.exports = {
   resolveTags,
   fallbackKeywordTag,
   validateNewsSchema,
-  getUnsplashImageUrl,
   generateImageSearchTerm,
 
   // Analytics / maintenance

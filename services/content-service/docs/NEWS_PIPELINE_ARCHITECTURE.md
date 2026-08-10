@@ -88,6 +88,33 @@ inside `mapProviderArticleToNewsItem()`, preserving the scraped `content` body.
   (`GEMINI_CONCURRENCY`, default 2) via `utils/concurrency.mapLimit`, so one slow
   or failing article never blocks or aborts the batch.
 
+### Content rating (exam-value score, 1-10)
+
+Every enriched article gets a Gemini-generated `rating` (1-10) plus a short
+`ratingRationale`, stored on the `News` document. This is **distinct from
+`relevanceScore`**: `relevanceScore` is a cheap heuristic (tags + recency +
+premium source), while `rating` is the model's judgement of how valuable the
+article is to a UPSC aspirant, so the aspirant view can surface the
+highest-yield content first.
+
+The model scores strictly from the article body (never prior knowledge) against
+three weighted criteria:
+
+| Criterion | Weight | What it measures |
+| --- | --- | --- |
+| **Exam-relevance** | ~50% | Overlap with the UPSC syllabus / GS papers (Polity, Economy, IR, Environment, S&T, etc.). |
+| **Factual depth** | ~30% | Density of verifiable facts, data, schemes, institutions, and constitutional/legal angles. |
+| **Current-affairs weightage** | ~20% | Significance and likelihood of appearing in prelims/mains this cycle. |
+
+Bands: **8-10** high-yield core syllabus, **5-7** useful supporting material,
+**1-4** tangential / low exam value. `0` means unrated (legacy content or a
+missing/invalid model score); `normalizeGeminiOutput()` clamps every value into
+the 1-10 band before it is saved.
+
+**Consumption:** `GET /api/v1/news` sorts by `rating` first (then
+`relevanceScore`, then recency) and accepts a `minRating` query param to filter
+out low-value content for the aspirant view, e.g. `GET /api/v1/news?minRating=7`.
+
 | Env var | Default | Meaning |
 | --- | --- | --- |
 | `GEMINI_PROMPT_BODY_CHARS` | 6000 | Max article chars sent to Gemini for enrichment |

@@ -8,7 +8,8 @@ USER    := services/user-service
 .DEFAULT_GOAL := help
 
 .PHONY: help install install-content install-user \
-        run run-content run-user test smoke-connect smoke-scrape \
+        run run-content run-user build serve start test smoke-connect smoke-scrape \
+        seed-taxonomy retag-questions harvest-questions generate-questions \
         env set-gemini set-mongo set-unsplash check-env
 
 help: ## Show available targets
@@ -41,6 +42,17 @@ run-content: check-env ## Run only the content-service (:5050)
 run-user: ## Run only the user-service (:4001)
 	cd $(USER) && npm run dev
 
+# ---------------------------------------------------------------- build / ship
+build: ## Bundle the whole backend into one file: dist/whatsnew-backend.cjs
+	npm install
+	npm run build
+
+serve: ## Run the built bundle (needs ./.env). Build first with `make build`.
+	node dist/whatsnew-backend.cjs
+
+start: ## Run the composed backend from source (both services, one port)
+	node server.js
+
 # ---------------------------------------------------------------- test
 test: ## Run content-service unit tests (node --test)
 	cd $(CONTENT) && npm test
@@ -50,6 +62,19 @@ smoke-connect: ## Chrome MCP connectivity smoke test
 
 smoke-scrape: ## Real scrape smoke test:  make smoke-scrape TOPIC="GST reform"
 	cd $(CONTENT) && node scripts/mcp-smoke.js scrape "$(TOPIC)"
+
+seed-taxonomy: ## Import upsc_taxonomy_v3_rated.json into Subject + Topic collections
+	node $(CONTENT)/scripts/seedTaxonomy.js
+
+retag-questions: ## Re-tag legacy questions onto exact topicIds (after seed-taxonomy)
+	node $(CONTENT)/scripts/retagQuestions.js $(if $(DISCARD),--discard-unmatched,)
+
+harvest-questions: ## Build the question bank from stored news MCQs (needs seed-taxonomy)
+	node $(CONTENT)/scripts/harvestQuestions.js
+
+generate-questions: ## Topic-first AI bank (Gemini). Args: P= M= SUBJECT= MIN_IMPORTANCE=
+	PRELIMS_PER_TOPIC=$(or $(P),3) MAINS_PER_TOPIC=$(or $(M),1) SUBJECT="$(SUBJECT)" MIN_IMPORTANCE=$(or $(MIN_IMPORTANCE),1) \
+		node $(CONTENT)/scripts/generateQuestions.js
 
 # ---------------------------------------------------------------- env / keys
 env: ## Create content-service/.env from template if missing
