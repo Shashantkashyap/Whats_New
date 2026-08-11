@@ -59,6 +59,160 @@ const tagsConfig = {
 
 const allTags = [...tagsConfig.high, ...tagsConfig.medium, ...tagsConfig.low];
 
+
+
+
+// Sub-topic layer: within a tag, match specific keywords in the article text
+// to a more targeted visual pool. Sits BETWEEN Gemini keyword and the broad
+// tag-level pool — narrower than the tag, more curated than raw title words.
+const tagSubTopicMap = {
+  Economy: {
+    banking: {
+      keywords: ["bank", "rbi", "loan", "credit", "npa", "interest rate"],
+      visuals: ["indian bank branch", "rbi reserve bank building", "bank loan approval india", "npa bad loans banking"],
+    },
+    budget: {
+      keywords: ["budget", "fiscal", "tax", "gst", "subsidy", "disinvestment"],
+      visuals: ["india budget briefcase", "finance ministry india", "gst tax filing india", "union budget parliament india"],
+    },
+    stockMarket: {
+      keywords: ["stock market", "sensex", "nifty", "share", "ipo", "investor"],
+      visuals: ["bombay stock exchange", "sensex nifty trading screen", "stock market investor india", "ipo listing india"],
+    },
+    inflation: {
+      keywords: ["inflation", "price rise", "cpi", "wpi", "cost of living"],
+      visuals: ["vegetable market price india", "inflation price rise india", "grocery shopping india cost", "fuel price india"],
+    },
+  },
+  Polity: {
+    parliament: {
+      keywords: ["lok sabha", "rajya sabha", "parliament", "bill", "ordinance"],
+      visuals: ["indian parliament session", "lok sabha rajya sabha building", "parliament bill debate india", "monsoon session parliament"],
+    },
+    elections: {
+      keywords: ["election", "voting", "election commission", "ballot", "poll"],
+      visuals: ["india election voting booth", "election commission india", "ballot box india voting", "voters queue india election"],
+    },
+    constitution: {
+      keywords: ["constitution", "amendment", "fundamental right", "federalism"],
+      visuals: ["indian constitution document", "constitution amendment india", "fundamental rights india", "ambedkar constitution india"],
+    },
+  },
+  IR: {
+    borderDiplomacy: {
+      keywords: ["china", "pakistan", "border", "line of control", "lac"],
+      visuals: ["india china border", "line of actual control india", "border security india china", "himalayan border patrol india"],
+    },
+    globalSummits: {
+      keywords: ["g20", "brics", "united nations", "summit", "quad"],
+      visuals: ["g20 summit india", "united nations general assembly", "brics summit leaders", "quad summit meeting"],
+    },
+    tradeRelations: {
+      keywords: ["fta", "cepa", "bilateral trade", "export deal"],
+      visuals: ["india trade agreement signing", "bilateral trade meeting india", "export deal handshake india", "free trade agreement india"],
+    },
+  },
+  "Science & Tech": {
+    space: {
+      keywords: ["isro", "satellite", "space", "spacecraft", "gaganyaan", "chandrayaan"],
+      visuals: ["isro satellite launch", "chandrayaan moon mission india", "gaganyaan space mission india", "rocket launch sriharikota"],
+    },
+    ai: {
+      keywords: ["artificial intelligence", "machine learning", "ai model", "chatbot"],
+      visuals: ["artificial intelligence technology india", "ai machine learning research", "data center ai india", "robotics ai india"],
+    },
+    biotech: {
+      keywords: ["vaccine", "biotech", "genome", "clinical trial"],
+      visuals: ["vaccine research laboratory india", "biotech research india", "genome sequencing lab", "clinical trial medical india"],
+    },
+  },
+  Health: {
+    hospitals: {
+      keywords: ["hospital", "medical", "healthcare", "doctor", "nurse"],
+      visuals: ["indian hospital ward", "doctors treating patient india", "healthcare worker india", "medical clinic india"],
+    },
+    disease: {
+      keywords: ["disease", "outbreak", "epidemic", "pandemic", "virus"],
+      visuals: ["disease outbreak india", "epidemic control india", "public health warning india", "who health emergency"],
+    },
+    vaccination: {
+      keywords: ["vaccine", "vaccination", "immunization"],
+      visuals: ["vaccination drive india", "child immunization india", "covid vaccine india", "health worker vaccination"],
+    },
+  },
+  Agriculture: {
+    farmerWelfare: {
+      keywords: ["farmer", "kisan", "msp", "farm loan"],
+      visuals: ["indian farmer msp protest", "farmer loan waiver india", "kisan scheme india", "farmer subsidy india"],
+    },
+    cropProduction: {
+      keywords: ["crop", "harvest", "monsoon", "irrigation", "yield"],
+      visuals: ["wheat harvest india field", "monsoon farming india", "irrigation canal india farm", "rice paddy field india"],
+    },
+  },
+  Energy: {
+    renewables: {
+      keywords: ["solar", "wind energy", "renewable", "green hydrogen"],
+      visuals: ["solar panel farm india", "wind turbine energy india", "green hydrogen plant india", "renewable energy grid india"],
+    },
+    fossilFuels: {
+      keywords: ["coal", "petroleum", "crude oil", "thermal"],
+      visuals: ["coal mine india", "oil refinery india", "thermal power plant india", "crude oil tanker india"],
+    },
+    nuclear: {
+      keywords: ["nuclear", "uranium", "atomic energy"],
+      visuals: ["nuclear power plant india", "uranium mining facility", "atomic energy india", "nuclear reactor control room"],
+    },
+  },
+  "Internal Security": {
+    borderForces: {
+      keywords: ["border security", "bsf", "itbp", "infiltration"],
+      visuals: ["bsf border security force", "border patrol india", "itbp soldiers india", "border fence india security"],
+    },
+    counterTerrorism: {
+      keywords: ["terror", "militant", "naxal", "maoist", "insurgen"],
+      visuals: ["counter terrorism operation india", "security forces operation india", "anti naxal operation india", "army patrol india"],
+    },
+  },
+  Infrastructure: {
+    transport: {
+      keywords: ["highway", "railway", "metro", "airport", "port"],
+      visuals: ["highway construction india", "metro rail construction india", "airport terminal india", "port cargo india"],
+    },
+    urbanDev: {
+      keywords: ["smart city", "urban", "housing", "construction"],
+      visuals: ["smart city project india", "urban housing construction india", "city skyline development india", "residential construction india"],
+    },
+  },
+  Judiciary: {
+    supremeCourt: {
+      keywords: ["supreme court", "chief justice", "collegium"],
+      visuals: ["supreme court india building", "chief justice india court", "supreme court bench india", "collegium judges india"],
+    },
+    verdicts: {
+      keywords: ["verdict", "judgment", "judgement", "petition", "bench"],
+      visuals: ["court verdict gavel india", "judge courtroom india", "legal petition hearing india", "high court judgment india"],
+    },
+  },
+};
+
+
+// Scan article text for a sub-topic keyword match within the given tag.
+// Returns a random visual from the matched sub-topic's pool, or null.
+function findSubTopicVisual(tag, text) {
+  const subTopics = tagSubTopicMap[tag];
+  if (!subTopics) return null;
+  const hay = String(text || "").toLowerCase();
+
+  for (const sub of Object.values(subTopics)) {
+    if (sub.keywords.some((kw) => hay.includes(kw))) {
+      const pool = sub.visuals;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+  }
+  return null;
+}
+
 // -------------------------
 // 🏷️ Keyword-based tag classification (fallback)
 // -------------------------
@@ -135,14 +289,248 @@ function orderByPriority(tags) {
 // -------------------------
 // 🎨 Image Search Term Generator
 // -------------------------
+// function generateImageSearchTerm(newsItem, generatedContent) {
+//   const title = newsItem.title || "";
+//   const tags = newsItem.tags || [];
+//   const why = generatedContent.why || "";
+
+//   const geminiKeyword = generatedContent.imageKeyword;
+//   if (geminiKeyword && geminiKeyword.length > 3) {
+//     return `${geminiKeyword} india`;
+//   }
+
+//   const searchTerms = [];
+
+//   // 1. Extract key meaningful title words
+//   const titleWords = title
+//     .toLowerCase()
+//     .replace(/[^\w\s]/g, " ")
+//     .split(/\s+/)
+//     .filter((w) => w.length > 3)
+//     .filter((w) => !["news", "india", "government", "announces", "says", "minister"].includes(w));
+
+//   // 2. Map tags to visual concepts
+//   const tagToVisualMap = {
+//     Polity: "indian parliament government building",
+//     Economy: "india economic growth business charts",
+//     IR: "international diplomacy flags handshake",
+//     Environment: "nature environment green india",
+//     "Science & Tech": "technology innovation laboratory",
+//     "Internal Security": "security forces indian army",
+//     Governance: "government building administration",
+//     Ethics: "scales justice ethics moral",
+//     Education: "students education classroom india",
+//     Health: "medical healthcare hospital india",
+//     Agriculture: "indian farmers agriculture crops",
+//     Infrastructure: "construction development infrastructure",
+//     Energy: "solar panels renewable energy india",
+//     "Climate Change": "climate change environment earth",
+//     Transport: "transportation railways roads india",
+//     Cybersecurity: "cybersecurity technology digital",
+//     Culture: "indian culture tradition heritage",
+//     Finance: "finance banking money rupees",
+//     Trade: "trade commerce business india",
+//     Judiciary: "court justice legal system india",
+//   };
+
+//   if (tags.length > 0) {
+//     const primaryTag = tags[0];
+//     const visualConcept = tagToVisualMap[primaryTag];
+//     if (visualConcept) searchTerms.push(visualConcept);
+//   }
+
+//   if (titleWords.length > 0) {
+//     const relevantWords = titleWords.slice(0, 3).join(" ");
+//     if (relevantWords) searchTerms.push(`${relevantWords} india`);
+//   }
+
+//   const fallbackTerms = {
+//     policy: "indian government policy meeting",
+//     law: "legal document justice india",
+//     economic: "india economy business growth",
+//     social: "indian society people community",
+//     international: "international cooperation flags",
+//     technology: "technology innovation digital india",
+//     environment: "india environment nature green",
+//     education: "education students learning india",
+//     health: "healthcare medical india hospital",
+//     security: "security safety protection india",
+//   };
+
+//   const titleLower = title.toLowerCase();
+//   for (const [keyword, term] of Object.entries(fallbackTerms)) {
+//     if (titleLower.includes(keyword)) {
+//       searchTerms.push(term);
+//       break;
+//     }
+//   }
+
+//   if (searchTerms.length > 0) return searchTerms[0];
+//   if (why && why.length > 20) {
+//     // use some words from why if title is poor
+//     const words = why
+//       .toLowerCase()
+//       .replace(/[^\w\s]/g, " ")
+//       .split(/\s+/)
+//       .filter((w) => w.length > 4)
+//       .slice(0, 3)
+//       .join(" ");
+//     if (words) return `${words} india`;
+//   }
+
+//   return "india government news current affairs";
+// }
+
+
 function generateImageSearchTerm(newsItem, generatedContent) {
   const title = newsItem.title || "";
   const tags = newsItem.tags || [];
   const why = generatedContent.why || "";
 
-  const searchTerms = [];
+  // 1. PRIMARY: Gemini's content-aware keyword (most specific, if you've
+  // added `imageKeyword` to the schema + prompt). Safe no-op if not present yet.
+  const geminiKeyword = String(generatedContent.imageKeyword || "").trim();
+  if (geminiKeyword.length > 3) {
+    return `${geminiKeyword} india`;
+  }
 
-  // 1. Extract key meaningful title words
+
+  const tagToVisualMap = {
+  Polity: [
+    "indian parliament building", "supreme court india", "constitution india document",
+    "rajya sabha lok sabha session", "president house rashtrapati bhavan", "election commission india voting",
+    "indian flag parliament house", "cabinet meeting india",
+  ],
+  Economy: [
+    "india stock market trading", "rbi reserve bank india", "indian rupee currency notes",
+    "gst tax india business", "mumbai stock exchange bse", "india budget finance ministry",
+    "indian economy factory manufacturing", "startup india business growth",
+  ],
+  IR: [
+    "india foreign ministry diplomacy", "united nations summit flags", "india china border",
+    "g20 summit delegates", "india us bilateral meeting", "brics summit leaders",
+    "indian embassy foreign affairs", "world map international relations",
+  ],
+  Environment: [
+    "forest wildlife india", "river pollution india", "renewable green energy india",
+    "himalayan mountains landscape", "indian national park tiger", "ganges river conservation",
+    "urban air pollution india", "biodiversity indian wildlife",
+  ],
+  "Science & Tech": [
+    "isro satellite launch", "indian research laboratory", "semiconductor chip technology",
+    "artificial intelligence data center", "space rocket launch india", "quantum computing research",
+    "indian scientist laboratory research", "tech innovation startup india",
+  ],
+  "Internal Security": [
+    "indian army soldiers", "border security force india", "national security operations",
+    "police force india", "paramilitary forces india", "coast guard india security",
+    "counter terrorism operations india", "indian military exercise",
+  ],
+  Governance: [
+    "government office india", "indian bureaucracy administration", "ministry building delhi",
+    "public service india", "civil servant office india", "e governance digital india",
+    "district administration india", "government scheme launch india",
+  ],
+  Ethics: [
+    "scales of justice", "moral integrity concept", "corruption anti graft",
+    "ethics compliance india", "whistleblower transparency concept", "accountability governance concept",
+    "integrity handshake business", "code of conduct document",
+  ],
+  "Social Issues": [
+    "indian women empowerment", "rural village india community", "child welfare india",
+    "tribal community india", "gender equality india", "migrant workers india",
+    "social welfare scheme india", "indian slum urban poverty",
+  ],
+  Education: [
+    "indian students classroom", "university campus india", "school children india",
+    "digital education india", "indian teacher classroom", "exam students india",
+    "skill training india youth", "higher education india college",
+  ],
+  Health: [
+    "hospital india healthcare", "doctors medical india", "vaccination drive india",
+    "public health india", "indian nurse hospital", "medical research india lab",
+    "rural healthcare clinic india", "who health organization",
+  ],
+  Agriculture: [
+    "indian farmer field", "crop harvest india", "irrigation farming india",
+    "agriculture market india", "wheat rice field india", "farmer tractor india",
+    "agricultural produce market india", "monsoon farming india",
+  ],
+  Infrastructure: [
+    "highway construction india", "metro rail india", "bridge infrastructure india",
+    "smart city india", "indian port infrastructure", "airport construction india",
+    "housing construction india", "urban development india",
+  ],
+  Energy: [
+    "solar power plant india", "renewable energy india", "electricity power grid",
+    "coal thermal plant india", "wind turbine energy india", "nuclear power plant india",
+    "hydropower dam india", "green hydrogen energy india",
+  ],
+  "Climate Change": [
+    "climate change earth", "global warming impact", "carbon emissions industry",
+    "extreme weather india", "melting glacier climate", "climate summit cop conference",
+    "drought flood climate india", "sustainable earth environment",
+  ],
+  Transport: [
+    "indian railways train", "highway traffic india", "airport aviation india",
+    "public transport india", "electric vehicle india", "mumbai local train",
+    "road transport india", "delhi metro station",
+  ],
+  Cybersecurity: [
+    "cybersecurity data protection", "hacking digital security", "data breach technology",
+    "encryption cyber india", "cyber crime india", "digital fraud security",
+    "network security server", "cyber attack computer",
+  ],
+  Culture: [
+    "indian heritage monument", "traditional festival india", "unesco heritage site india",
+    "indian art culture", "classical dance india", "temple architecture india",
+    "indian handicraft tradition", "folk art india festival",
+  ],
+  "Disaster Management": [
+    "flood disaster india", "earthquake damage rescue", "cyclone storm india",
+    "ndrf rescue operation india", "landslide disaster india", "drought relief india",
+    "disaster relief camp india", "emergency response team india",
+  ],
+  "Legal Affairs": [
+    "law document gavel", "legislation parliament bill", "legal contract india",
+    "law book justice india", "tribunal hearing india", "legal reform india",
+    "statute law india", "courtroom legal proceeding",
+  ],
+  Judiciary: [
+    "supreme court india building", "high court india", "indian judiciary gavel",
+    "legal justice india", "court hearing india", "judge courtroom india",
+    "justice statue india court", "legal verdict india",
+  ],
+  Finance: [
+    "indian banking finance", "stock exchange india", "rupee currency india",
+    "fintech digital payments india", "bank branch india", "loan credit india finance",
+    "insurance finance india", "digital wallet payment india",
+  ],
+  Trade: [
+    "india export import", "trade port cargo india", "commerce business india",
+    "supply chain india", "shipping container port india", "trade agreement handshake",
+    "wholesale market india trade", "customs trade india",
+  ],
+  "Public Administration": [
+    "civil service india office", "district collector office india", "public administration india",
+    "government reform india", "ias officer india", "bureaucracy india office",
+    "administrative building india", "public sector india",
+  ],
+  Innovation: [
+    "startup india innovation", "patent research india", "incubator startup india",
+    "make in india manufacturing", "innovation hub india", "r&d research india",
+    "tech entrepreneur india", "innovation lab india",
+  ],
+};
+
+  // 2. NEW: sub-topic keyword match within the primary tag (curated + specific)
+  const scanText = `${title} ${newsItem.rawDescription || newsItem.description || ""} ${newsItem.content || ""}`;
+  if (tags.length > 0) {
+    const subVisual = findSubTopicVisual(tags[0], scanText);
+    if (subVisual) return subVisual;
+  }
+
+  // 3. Title-based specific term
   const titleWords = title
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
@@ -150,65 +538,20 @@ function generateImageSearchTerm(newsItem, generatedContent) {
     .filter((w) => w.length > 3)
     .filter((w) => !["news", "india", "government", "announces", "says", "minister"].includes(w));
 
-  // 2. Map tags to visual concepts
-  const tagToVisualMap = {
-    Polity: "indian parliament government building",
-    Economy: "india economic growth business charts",
-    IR: "international diplomacy flags handshake",
-    Environment: "nature environment green india",
-    "Science & Tech": "technology innovation laboratory",
-    "Internal Security": "security forces indian army",
-    Governance: "government building administration",
-    Ethics: "scales justice ethics moral",
-    Education: "students education classroom india",
-    Health: "medical healthcare hospital india",
-    Agriculture: "indian farmers agriculture crops",
-    Infrastructure: "construction development infrastructure",
-    Energy: "solar panels renewable energy india",
-    "Climate Change": "climate change environment earth",
-    Transport: "transportation railways roads india",
-    Cybersecurity: "cybersecurity technology digital",
-    Culture: "indian culture tradition heritage",
-    Finance: "finance banking money rupees",
-    Trade: "trade commerce business india",
-    Judiciary: "court justice legal system india",
-  };
+  if (titleWords.length >= 2) {
+    return `${titleWords.slice(0, 4).join(" ")} india`;
+  }
 
+  // 4. FALLBACK: broad tag-level pool (8 variants each, random pick)
   if (tags.length > 0) {
-    const primaryTag = tags[0];
-    const visualConcept = tagToVisualMap[primaryTag];
-    if (visualConcept) searchTerms.push(visualConcept);
-  }
-
-  if (titleWords.length > 0) {
-    const relevantWords = titleWords.slice(0, 3).join(" ");
-    if (relevantWords) searchTerms.push(`${relevantWords} india`);
-  }
-
-  const fallbackTerms = {
-    policy: "indian government policy meeting",
-    law: "legal document justice india",
-    economic: "india economy business growth",
-    social: "indian society people community",
-    international: "international cooperation flags",
-    technology: "technology innovation digital india",
-    environment: "india environment nature green",
-    education: "education students learning india",
-    health: "healthcare medical india hospital",
-    security: "security safety protection india",
-  };
-
-  const titleLower = title.toLowerCase();
-  for (const [keyword, term] of Object.entries(fallbackTerms)) {
-    if (titleLower.includes(keyword)) {
-      searchTerms.push(term);
-      break;
+    const options = tagToVisualMap[tags[0]];
+    if (options && options.length) {
+      return options[Math.floor(Math.random() * options.length)];
     }
   }
 
-  if (searchTerms.length > 0) return searchTerms[0];
+  // 5. LAST RESORT
   if (why && why.length > 20) {
-    // use some words from why if title is poor
     const words = why
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
@@ -219,7 +562,7 @@ function generateImageSearchTerm(newsItem, generatedContent) {
     if (words) return `${words} india`;
   }
 
-  return "india government news current affairs";
+  return "india current affairs news";
 }
 
 // -------------------------
@@ -307,6 +650,7 @@ function normalizeGeminiOutput(data) {
   const rating = Number(safe.rating);
   safe.rating = Number.isFinite(rating) ? Math.min(Math.max(Math.round(rating), 1), 10) : 0;
   safe.ratingRationale = String(safe.ratingRationale || "").trim();
+  safe.imageKeyword = String(safe.imageKeyword || "").trim();
 
   return safe;
 }
@@ -460,8 +804,9 @@ const GEMINI_RESPONSE_SCHEMA = {
     },
     rating: { type: s.NUMBER },
     ratingRationale: { type: s.STRING },
+    imageKeyword: { type: s.STRING },   // ← new field
   },
-  required: ["headline", "why", "summary", "flowchartNodes", "examRelevance", "mcqs", "mainsQuestion", "rating", "ratingRationale"],
+  required: ["headline", "why", "summary", "flowchartNodes", "examRelevance", "mcqs", "mainsQuestion", "rating", "ratingRationale", "imageKeyword"],
 };
 
 function buildGeminiContentPrompt(newsItem) {
@@ -487,6 +832,7 @@ FIELD GUIDANCE:
 - mainsQuestion: one analytical, multi-dimensional question with 3 hints.
 - rating: integer 1-10 scoring this article's value to a UPSC aspirant, judged ONLY on the ARTICLE. Weigh three criteria: (a) exam-relevance ~50% — overlap with the UPSC syllabus / GS papers; (b) factual depth ~30% — density of verifiable facts, data, schemes, institutions, constitutional/legal angles; (c) current-affairs weightage ~20% — significance and likelihood of appearing in prelims/mains this cycle. Bands: 8-10 = high-yield core syllabus, 5-7 = useful supporting material, 1-4 = tangential / low exam value.
 - ratingRationale: one sentence (<= 200 chars) justifying the rating against the three criteria above.
+- imageKeyword: 2-4 word visual search phrase capturing the SPECIFIC subject of this article (a place, person, scheme, institution, or event named in it) — NOT a generic category word. Example: "Ladakh border infrastructure", "RBI repo rate", "ISRO Gaganyaan mission". Avoid vague words like "government", "policy", "news".
 - Formal, exam-appropriate language throughout.
 
 METADATA: title="${safeTitle}" | source="${newsItem.source || "Unknown"}" | publishedAt="${newsItem.publishedAt || new Date().toISOString()}" | tags=${JSON.stringify(newsItem.tags || [])}
