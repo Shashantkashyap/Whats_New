@@ -22,3 +22,4 @@ router.post("/", questionController.createQuestions);
 router.get("/:id", bearerAuth, questionController.getQuestionById);
 
 module.exports = router;
+ 
