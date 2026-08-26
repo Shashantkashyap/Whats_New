@@ -119,13 +119,28 @@ function gradePrelims(items, answersMap = {}) {
 
 function answersToMap(answers) {
   const map = {};
+  
+  // If we mistakenly got an array of arrays (e.g. from [req.body] when req.body is already an array)
+  if (Array.isArray(answers) && answers.length === 1 && Array.isArray(answers[0])) {
+    answers = answers[0];
+  }
+
   if (Array.isArray(answers)) {
     for (const a of answers) {
-      if (!a || !a.questionId) continue;
-      map[String(a.questionId)] = a.selectedOption !== undefined ? a.selectedOption : a.answerText;
+      if (!a) continue;
+      const qId = a.question_id || a.questionId || a.id;
+      if (!qId) continue;
+      
+      const val = a.selectedOption !== undefined ? a.selectedOption : (a.answer_text || a.answerText || a.text || a.answer);
+      if (val !== undefined) {
+        map[String(qId)] = val;
+      }
     }
   } else if (answers && typeof answers === "object") {
-    Object.assign(map, answers);
+    // If answers is a dictionary of { questionId: answerText }
+    for (const key of Object.keys(answers)) {
+      map[String(key)] = answers[key];
+    }
   }
   return map;
 }

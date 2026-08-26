@@ -222,7 +222,14 @@ async function uploadAnswers(req, res) {
       return apiErr(res, "TEST_WRONG_MODE", "Answer upload applies to mains tests; prelims uses /submit.", 400);
     }
 
-    const answers = req.body.answers || [req.body];
+    let answers = [];
+    if (Array.isArray(req.body)) {
+      answers = req.body;
+    } else if (req.body && Array.isArray(req.body.answers)) {
+      answers = req.body.answers;
+    } else {
+      answers = [req.body];
+    }
     const map = answersToMap(answers);
     let updated = 0;
     for (const item of test.items) {
@@ -253,13 +260,28 @@ async function evaluateTest(req, res) {
       return apiErr(res, "TEST_WRONG_MODE", "Evaluation applies to mains tests; prelims uses /submit.", 400);
     }
 
-    // Allow answers to be passed inline at evaluation time too (upload optional).
-    if (req.body && req.body.answers) {
-      const map = answersToMap(req.body.answers);
+    // Normalize request body payload to support multiple formats & keys
+    let submittedAnswers = [];
+    if (Array.isArray(req.body)) {
+      submittedAnswers = req.body;
+    } else if (req.body && Array.isArray(req.body.answers)) {
+      submittedAnswers = req.body.answers;
+    }
+
+    if (submittedAnswers.length > 0) {
+      const normalizedAnswersMap = new Map();
+      submittedAnswers.forEach((ans) => {
+        const qId = ans.question_id || ans.questionId || ans.id;
+        const aText = ans.answer_text || ans.answerText || ans.text || ans.answer;
+        if (qId && aText !== undefined) {
+          normalizedAnswersMap.set(String(qId), String(aText).trim());
+        }
+      });
+
       for (const item of test.items) {
-        const text = map[String(item.questionId)];
+        const text = normalizedAnswersMap.get(String(item.questionId));
         if (text !== undefined) {
-          item.userAnswer = String(text);
+          item.userAnswer = text;
           item.userAnswerImageId = null;
         }
       }
@@ -268,13 +290,25 @@ async function evaluateTest(req, res) {
     let total = 0;
     let maxTotal = 0;
     for (const item of test.items) {
-      const evalResult = await evaluateAnswer({
-        question: item.question,
-        hints: item.hints,
-        modelAnswer: item.modelAnswer,
-        answerText: item.userAnswer || "",
-        maxMarks: item.maxMarks || 10,
-      });
+      const userAnswerText = item.userAnswer || "";
+      
+      let evalResult;
+      if (!userAnswerText || userAnswerText.trim().length === 0) {
+        evalResult = {
+          marks: 0,
+          feedback: "No answer was submitted.",
+          improvements: ["Attempt the question — even a structured skeleton earns marks."]
+        };
+      } else {
+        evalResult = await evaluateAnswer({
+          question: item.question,
+          hints: item.hints,
+          modelAnswer: item.modelAnswer,
+          answerText: userAnswerText,
+          maxMarks: item.maxMarks || 10,
+        });
+      }
+
       item.marks = evalResult.marks;
       item.feedback = evalResult.feedback;
       item.improvements = evalResult.improvements;

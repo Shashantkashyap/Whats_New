@@ -5,9 +5,12 @@ dotenv.config();
 
 function authenticateToken(req, res, next) {
   try {
-    // The access token is set as the `accessToken` cookie at login (see
-    // authController.issueTokens); read that exact name.
-    const token = req.cookies?.accessToken;
+    // Check Authorization header first (Bearer token), then fallback to cookies
+    const authHeader = req.headers.authorization;
+    let token = authHeader && authHeader.startsWith('Bearer ') 
+      ? authHeader.split(' ')[1] 
+      : req.cookies?.accessToken;
+
     if (!token) {
       return res.status(401).json({ error: "Not authenticated" });
     }
