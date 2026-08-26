@@ -7,8 +7,8 @@ function authenticateToken(req, res, next) {
   try {
     // Check Authorization header first (Bearer token), then fallback to cookies
     const authHeader = req.headers.authorization;
-    let token = authHeader && authHeader.startsWith('Bearer ') 
-      ? authHeader.split(' ')[1] 
+    let token = authHeader && authHeader.toLowerCase().startsWith('bearer ') 
+      ? authHeader.substring(7).trim() 
       : req.cookies?.accessToken;
 
     if (!token) {
