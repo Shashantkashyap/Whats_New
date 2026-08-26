@@ -12,7 +12,11 @@ function authenticateToken(req, res, next) {
       : req.cookies?.accessToken;
 
     if (!token) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res.status(401).json({ 
+        error: "Not authenticated", 
+        debug_headers: req.headers,
+        debug_cookies: req.cookies
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
